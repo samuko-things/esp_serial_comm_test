@@ -50,7 +50,7 @@ class Esp32SerialServer:
         else:
             return False
     
-    def setParam(self, cmd_route, motor_no, param_val):
+    def setParam(self, cmd_route, motor_no=0, param_val=0):
         cmd_str = cmd_route + "," + str(motor_no) + "," + str(param_val)
         data = self.send_and_receive(cmd_str).split(',')
         return data[0]
@@ -59,7 +59,7 @@ class Esp32SerialServer:
         # else:
         #     return False
   
-    def getParam(self, cmd_route, motor_no):
+    def getParam(self, cmd_route, motor_no=0):
         cmd_str = cmd_route + "," + str(motor_no)
         data = self.send_and_receive(cmd_str).split(',')
         return float(data[0])

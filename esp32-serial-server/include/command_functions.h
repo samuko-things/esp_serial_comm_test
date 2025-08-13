@@ -130,7 +130,7 @@ float rdir[2] = {
 // float maxVelB = calc_wB_allowable(); // in radians/sec
 
 // for command timeout.
-unsigned long cmdVelTimeoutInterval = 0; // ms -> (1000/sampleTime) hz
+unsigned long cmdVelTimeoutInterval = 5000; // ms -> (1000/sampleTime) hz
 unsigned long cmdVelTimeout[2] = {
   0,
   0
@@ -169,7 +169,7 @@ String writeMotorPWM(int motor_no, int pwm)
 {
   if (pidMode[motor_no-1] == 0){
     motor[motor_no-1].sendPWM(pwm);
-    // cmdVelTimeout[motor_no-1] = millis();
+    cmdVelTimeout[motor_no-1] = millis();
     return "1";
   }
   else {
@@ -182,7 +182,7 @@ String writeMotorSpeed(int motor_no, float targetVel)
 {
   if (pidMode[motor_no-1] == 1){
     target[motor_no-1] = targetVel;
-    // cmdVelTimeout[motor_no-1] = millis();
+    cmdVelTimeout[motor_no-1] = millis();
     return "1";
   }
   else {
@@ -199,6 +199,10 @@ String setPidModeFunc(int motor_no, int mode)
   pidMotor[motor_no-1].begin();
 
   return "1";
+}
+String getPidModeFunc(int motor_no)
+{
+  return String(pidMode[motor_no-1]);
 }
 
 
@@ -280,27 +284,27 @@ String getCutoffFreq(int motor_no)
 }
 
 
-// String setCmdTimeout(int timeout)
-// {
-//   int cmdTimeout = timeout;
-//   if (cmdTimeout < 10)
-//   {
-//     cmdVelTimeoutInterval = 0;
-//   }
-//   else
-//   {
-//     cmdVelTimeoutInterval = cmdTimeout;
-//   }
-//   for (int i=0; i<2; i+=1)
-//   {
-//     cmdVelTimeout[i] = millis();
-//   }
-//   return "1";
-// }
-// String getCmdTimeout()
-// {
-//   return String(cmdVelTimeoutInterval);
-// }
+String setCmdTimeout(int timeout)
+{
+  int cmdTimeout = timeout;
+  if (cmdTimeout < 10)
+  {
+    cmdVelTimeoutInterval = 0;
+  }
+  else
+  {
+    cmdVelTimeoutInterval = cmdTimeout;
+  }
+  for (int i=0; i<2; i+=1)
+  {
+    cmdVelTimeout[i] = millis();
+  }
+  return "1";
+}
+String getCmdTimeout()
+{
+  return String(cmdVelTimeoutInterval);
+}
 
 
 #endif

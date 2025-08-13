@@ -59,7 +59,7 @@ void pidInit()
 unsigned long sensorUpdateTime, sensorUpdateTimeInterval = 5;
 unsigned long serialLoopTime, serialLoopTimeInterval = 5;
 unsigned long pidTime, pidTimeInterval = 20;
-unsigned long pidStopTime, pidStopTimeInterval = 200;
+unsigned long pidStopTime[2], pidStopTimeInterval = 250;
 //---------------------------------------------------------------------------------------------
 
 void setup()
@@ -80,10 +80,12 @@ void setup()
   sensorUpdateTime = now;
   serialLoopTime   = now;
   pidTime          = now;
-  pidStopTime      = now;
-  // for (int i=0; i<2; i+=1){
-  //   cmdVelTimeout[i] = now;
-  // }
+  for (int i=0; i<2; i+=1){
+    pidStopTime[i] = now;
+  }
+  for (int i=0; i<2; i+=1){
+    cmdVelTimeout[i] = now;
+  }
 }
 
 void loop()
@@ -92,15 +94,15 @@ void loop()
   // unsigned long now_us = micros();
 
   // Sensor update loop
-  // if ((now - sensorUpdateTime) >= sensorUpdateTimeInterval)
-  // {
-  //   for (int i=0; i<2; i+=1)
-  //   {
-  //     unfilteredVel[i] = encoder[i].getAngVel();
-  //     filteredVel[i] = velFilter[i].filter(unfilteredVel[i]);
-  //   }
-  //   sensorUpdateTime = now;
-  // }
+  if ((now - sensorUpdateTime) >= sensorUpdateTimeInterval)
+  {
+    for (int i=0; i<2; i+=1)
+    {
+      unfilteredVel[i] = encoder[i].getAngVel();
+      filteredVel[i] = velFilter[i].filter(unfilteredVel[i]);
+    }
+    sensorUpdateTime = now;
+  }
   
   // Serial comm loop
   if ((now - serialLoopTime) >= serialLoopTimeInterval)
@@ -110,37 +112,48 @@ void loop()
   }
 
   // PID control loop
-  // if ((now - pidTime) >= pidTimeInterval)
-  // {
-  //   for (int i=0; i<2; i+=1)
-  //   {
-  //     if (pidMode[i])
-  //     {
-  //       output[i] = pidMotor[i].compute(target[i], filteredVel[i]);
-  //       motor[i].sendPWM((int)output[i]);
-  //     }
-  //   }
-  //   pidTime = now;
-  // }
+  if ((now - pidTime) >= pidTimeInterval)
+  {
+    for (int i=0; i<2; i+=1)
+    {
+      if (pidMode[i])
+      {
+        output[i] = pidMotor[i].compute(target[i], filteredVel[i]);
+        motor[i].sendPWM((int)output[i]);
+      }
+    }
+    pidTime = now;
+  }
 
   // // check to see if motor has stopped
-  // if ((now - pidStopTime) >= pidStopTimeInterval)
-  // {
-  //   for (int i=0; i<2; i+=1)
+  // for (int i=0; i<2; i+=1){
+  //   if (abs(target[i]) < 0.01)
   //   {
-  //     if (pidMode[i])
+  //     if (pidMode[i] == 1)
   //     {
-  //       if (abs(target[i]) < 0.01)
+  //       if ((now - pidStopTime[i]) >= pidStopTimeInterval)
   //       {
   //         target[i] = 0.00;
   //         setPidModeFunc(i, 0);
+  //         pidStopTime[i] = now;
   //       }
   //     }
+  //     else
+  //     {
+  //       pidStopTime[i] = now;
+  //     }
   //   }
-  //   pidStopTime = now;
+  //   else
+  //   {
+  //     if (pidMode[i] == 0)
+  //     {
+  //       setPidModeFunc(i, 1);
+  //     }
+  //     pidStopTime[i] = now;
+  //   }
   // }
   
-  // // command timeout
+  // command timeout
   // int cmdTimeout = (int)cmdVelTimeoutInterval;
   // if (cmdTimeout > 0)
   
