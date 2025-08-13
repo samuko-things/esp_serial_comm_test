@@ -55,7 +55,8 @@ if __name__ == '__main__':
   # print(res)
 
   pidMode = 0
-  motorController.setParam("/mode", 1, pidMode)
+  res = motorController.setParam("/mode", 1, pidMode)
+  print(res)
   res = motorController.getParam("/mode", 1)
   print('mode_1: ', res)
   motorController.setParam("/mode", 2, pidMode)
@@ -110,7 +111,7 @@ if __name__ == '__main__':
     res = motorController.writePWM(2, 100)
     print(res)
 
-  time.sleep(10.0)
+  time.sleep(5.0)
 
   if pidMode == 1:
     res = motorController.writeSpeed(1, 0.00)

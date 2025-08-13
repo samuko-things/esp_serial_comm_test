@@ -86,6 +86,7 @@ void setup()
   for (int i=0; i<2; i+=1){
     cmdVelTimeout[i] = now;
   }
+  cmdVelTimeoutInterval = 4000;
 }
 
 void loop()
@@ -155,13 +156,18 @@ void loop()
   
   // command timeout
   // int cmdTimeout = (int)cmdVelTimeoutInterval;
-  // if (cmdTimeout > 0)
-  
-  // for (int i=0; i<2; i+=1){
-  //   if ((now - cmdVelTimeout[i]) >= cmdVelTimeoutInterval)
-  //   {
-  //     target[i] = 0.00;
-  //     setPidModeFunc(i, 0); // stop motor
+  // if (cmdVelTimeoutInterval > 0)
+  // {
+  //   for (int i=0; i<2; i+=1){
+  //     if ((millis() - cmdVelTimeout[i]) >= cmdVelTimeoutInterval)
+  //     {
+  //       target[i] = 0.00;
+  //       pidMode[i] = 0;
+  //       motor[i].sendPWM(0);
+  //       pidMotor[i].begin();
+  //       // String val = setPidModeFunc(i, 0); // stop motor
+  //     }
   //   }
   // }
+  
 }
