@@ -7,7 +7,7 @@ class g():
   signalList = ["step", "square", "sine"]
 
   app = None
-  serClient = None
+  motorController = None
   port = "None"
 
   i2cAddress = None
@@ -59,18 +59,55 @@ def stepSignal(targetMax, deltaT, duration):
      targetCtrl = 0              
   return targetCtrl
 
-def squareSignal(targetMax, deltaT, duration):
-  if (deltaT>(1/10*duration)) and (deltaT < (4.5/10*duration)):
-     targetCtrl = targetMax
-  elif (deltaT>(5.5/10*duration)) and (deltaT < (9/10*duration)):
-     targetCtrl = -1*targetMax
-  else:
-     targetCtrl = 0              
-  return targetCtrl
+# def squareSignal(targetMax, deltaT, duration):
+#   if (deltaT>(1/10*duration)) and (deltaT < (4.5/10*duration)):
+#      targetCtrl = targetMax
+#   elif (deltaT>(5.5/10*duration)) and (deltaT < (9/10*duration)):
+#      targetCtrl = -1*targetMax
+#   else:
+#      targetCtrl = 0              
+#   return targetCtrl
 
 def sineSignal(targetMax, deltaT, duration):
   targetCtrl = targetMax * sin(2*pi*(deltaT/duration))
   return targetCtrl
+
+def squareSignal(targetMax, deltaT, duration):
+    ramp_time = 0.5  # seconds for ramp up/down
+    t = deltaT % duration  # wrap within period
+    
+    # Define high and low phases (excluding ramps)
+    high_start = 1/10 * duration
+    high_end   = 4.5/10 * duration
+    low_start  = 5.5/10 * duration
+    low_end    = 9/10 * duration
+
+    if high_start <= t <= high_end:
+        # Ramp up at start of high phase
+        if t - high_start < ramp_time:
+            targetCtrl = targetMax * ((t - high_start) / ramp_time)
+        # Ramp down at end of high phase
+        elif high_end - t < ramp_time:
+            targetCtrl = targetMax * ((high_end - t) / ramp_time)
+        # Steady high
+        else:
+            targetCtrl = targetMax
+
+    elif low_start <= t <= low_end:
+        # Ramp down into negative
+        if t - low_start < ramp_time:
+            targetCtrl = -targetMax * ((t - low_start) / ramp_time)
+        # Ramp up toward zero from negative
+        elif low_end - t < ramp_time:
+            targetCtrl = -targetMax * ((low_end - t) / ramp_time)
+        # Steady negative
+        else:
+            targetCtrl = -targetMax
+
+    else:
+        targetCtrl = 0.0
+
+    return targetCtrl
 
 
 def selectSignal(type, targetMax, deltaT, duration):

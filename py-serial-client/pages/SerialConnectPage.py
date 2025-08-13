@@ -70,9 +70,10 @@ class SerialConnectFrame(tb.Frame):
 
   def connectToPort(self, name):
     try:
-      g.serClient = SerialComm(name)
+      g.motorController = SerialComm(name)
       time.sleep(1)
-      g.serClient.setParam('/mode', 0)
+      g.motorController.setParam('/mode', 1, 0)
+      g.motorController.setParam('/mode', 2, 0)
       return True
     except:
       return False

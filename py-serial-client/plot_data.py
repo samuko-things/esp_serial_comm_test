@@ -7,10 +7,10 @@ from esp32_serial_client import Esp32SerialServer
 
 
 def animate(i):
-    global client, axes, dataList1, dataList2, dataPoints
+    global motorController, axes, dataList1, dataList2, dataPoints
 
-    posA, velA = client.getMotorAData()
-    posB, velB = client.getMotorBData()
+    posA, velA, _ = motorController.readData()
+    posB, velB, _ = motorController.readData()
 
     dataList1.append(velA)
     dataList2.append(velB)
@@ -40,7 +40,7 @@ def animate(i):
 
 
 port = '/dev/ttyUSB0'
-client = Esp32SerialServer(port)
+motorController = Esp32SerialServer(port)
 
 dataList1 = []
 dataList2 = []
@@ -51,11 +51,40 @@ fig = plt.figure()  # Create Matplotlib plots fig is the 'higher level' plot win
 axes = fig.add_subplot(111) # Add subplot to main fig window
 
 if __name__ == '__main__':
-  # client.cmdMotorAPWM(80)
-  # client.cmdMotorBPWM(-80)
-  client.setParam("/mode", 0)
-  # velA = client.cmdMotorAVel(0.0)
-  velB = client.cmdMotorBVel(6.284)
-  print(velB)
+  res = motorController.setParam("/mode", 1, 0)
+  print(res)
+  # res = motorController.setParam("/mode", 2, 1)
+  # res = motorController.setParam("/kp", 1, 25.0)
+  # res = motorController.setParam("/kp", 2, 80.0)
+
+  # res = motorController.getParam("/kp", 1)
+  # print(res)
+  # res = motorController.getParam("/kp", 2)
+  # print(res)
+
+  # res = motorController.writeSpeed(1, 6.284)
+  # print(res)
+  # res = motorController.writeSpeed(2, 6.284)
+  # print(res)
+
+  # time.sleep(10.0)
+
+  # res = motorController.setParam("/mode", 0, 0)
+  # res = motorController.writePWM(1, 0)
+  # print(res)
+
+
+  # time.sleep(2.0)
+
+  # while True:
+  #   pos_1, vel_1, vel0_1 = motorController.readData(1)
+  #   pos_2, vel_2, vel0_2 = motorController.readData(2)
+
+  #   print(pos_1, vel_1, vel0_1)
+  #   print(pos_2, vel_2, vel0_2)
+  #   print()
+
+  #   time.sleep(0.1)
+
   # ani = animation.FuncAnimation(fig, animate, frames=100, interval=50)
   # plt.show()

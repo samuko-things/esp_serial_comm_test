@@ -26,7 +26,7 @@ class GraphFrame(tb.Frame):
     buttonStyle.configure(buttonStyleName, font=('Monospace',9, 'bold'))
 
 
-    # g.motorTargetVel[self.motorNo], g.motorActualVel[self.motorNo] = g.serClient.get(f'/pVel{g.motorLabel[self.motorNo]}')
+    g.motorTargetVel[self.motorNo], g.motorActualVel[self.motorNo] = g.motorController.readPidVel(self.motorNo+1)
 
     self.actualText = tb.Label(self.textFrame1, text="ACTUAL(rad/s):", font=('Monospace',10, 'bold') ,bootstyle="danger")
     self.actualVal = tb.Label(self.textFrame1, text=g.motorActualVel[self.motorNo], font=('Monospace',10), bootstyle="dark")
@@ -186,17 +186,17 @@ class GraphFrame(tb.Frame):
         self.deletePlot(self.plotLineBufferA, self.plotLineBufferB)
         self.plotButton.configure(text='START PLOT')
         self.clearPlot = False
-        g.serClient.setParam('/mode', 0)
+        g.motorController.setParam('/mode', self.motorNo+1, 0)
         time.sleep(0.1)
 
     elif self.doPlot:
         self.doPlot = False 
-        g.serClient.setParam('/mode', 0)
+        g.motorController.setParam('/mode', self.motorNo+1, 0)
         # print('stop plot')
     else:
         self.doPlot = True 
         self.doPlotTime = time.time()
-        g.serClient.setParam('/mode', 1)
+        g.motorController.setParam('/mode', self.motorNo+1, 1)
         # print('start plot')
 
 
@@ -214,11 +214,7 @@ class GraphFrame(tb.Frame):
   def plot_graph(self):
       if self.doPlot and self.doPlotDuration < time.time()-self.doPlotTime:
           if g.motorIsOn[self.motorNo]:
-            if self.motorNo == 0:
-              isSuccess = g.serClient.cmdMotorAVel(0.0)
-            elif self.motorNo == 1:
-              isSuccess = g.serClient.cmdMotorBVel(0.0)
-
+            isSuccess = g.motorController.writeSpeed(self.motorNo+1, 0.0)
             if isSuccess:
               g.motorIsOn[self.motorNo] = False
               # print('Motor off', isSuccess)
@@ -242,30 +238,16 @@ class GraphFrame(tb.Frame):
                                   deltaT=time.time()-self.doPlotTime)
           
           if not g.motorIsOn[self.motorNo]:
-            
-            #------------------------------------------------------------------------#
-            if self.motorNo == 0:
-              isSuccess = g.serClient.cmdMotorAVel(targetVel)
-            elif self.motorNo == 1:
-              isSuccess = g.serClient.cmdMotorBVel(targetVel)
-            #------------------------------------------------------------------------#
+            isSuccess = g.motorController.writeSpeed(self.motorNo+1, targetVel)
 
             if isSuccess:
               g.motorIsOn[self.motorNo] = True
               # print('Motor on', isSuccess)
           
-          #-------------------------------------------------------------------------#
-          if self.motorNo == 0:
-            isSuccess = g.serClient.cmdMotorAVel(targetVel)
-          elif self.motorNo == 1:
-            isSuccess = g.serClient.cmdMotorBVel(targetVel)
-          #------------------------------------------------------------------------#
+          isSuccess = g.motorController.writeSpeed(self.motorNo+1, targetVel)
 
           try:
-            if self.motorNo == 0:
-              g.motorTargetVel[self.motorNo], g.motorActualVel[self.motorNo] = g.serClient.getMotorA_PID_vel()
-            elif self.motorNo == 1:
-              g.motorTargetVel[self.motorNo], g.motorActualVel[self.motorNo] = g.serClient.getMotorB_PID_vel()
+            g.motorTargetVel[self.motorNo], g.motorActualVel[self.motorNo] = g.motorController.readPidVel(self.motorNo+1)
             
           except:
             pass
@@ -301,10 +283,7 @@ class GraphFrame(tb.Frame):
 
       else:
           if g.motorIsOn[self.motorNo]:
-            if self.motorNo == 0:
-              isSuccess = g.serClient.cmdMotorAVel(0.0)
-            elif self.motorNo == 1:
-              isSuccess = g.serClient.cmdMotorAVel(0.0)
+            isSuccess = g.motorController.writeSpeed(self.motorNo+1, 0.0)
 
             if isSuccess:
               self.clearPlot = True

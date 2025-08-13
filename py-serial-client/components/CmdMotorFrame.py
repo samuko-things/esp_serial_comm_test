@@ -38,41 +38,22 @@ class CmdMotorFrame(tb.LabelFrame):
 
   def startForwardCommand(self, e):
     # print("start forward command")
-    if self.motorNo == 0:
-      if int(g.motorDirConfig[self.motorNo]) == 1:
-        g.serClient.cmdMotorAPWM(g.motorTestPwm[self.motorNo])
-      elif int(g.motorDirConfig[self.motorNo]) == -1:
-        g.serClient.cmdMotorAPWM(-g.motorTestPwm[self.motorNo])
-    elif self.motorNo == 1:
-      if int(g.motorDirConfig[self.motorNo]) == 1:
-        g.serClient.cmdMotorBPWM(g.motorTestPwm[self.motorNo])
-      elif int(g.motorDirConfig[self.motorNo]) == -1:
-        g.serClient.cmdMotorBPWM(-g.motorTestPwm[self.motorNo])
+    if int(g.motorDirConfig[self.motorNo]) == 1:
+      g.motorController.writePWM(self.motorNo+1, g.motorTestPwm[self.motorNo])
+    elif int(g.motorDirConfig[self.motorNo]) == -1:
+      g.motorController.writePWM(self.motorNo+1, -g.motorTestPwm[self.motorNo])
 
   def stopForwardCommand(self, e):
     # print("stop forward command")
-    g.serClient.cmdMotorAPWM(0)
-    g.serClient.cmdMotorBPWM(0)
+    g.motorController.writePWM(self.motorNo+1, 0)
 
   def startReverseCommand(self, e):
     # print("start reverse command")
-    if self.motorNo == 0:
-      if int(g.motorDirConfig[self.motorNo]) == 1:
-        g.serClient.cmdMotorAPWM(-g.motorTestPwm[self.motorNo])
-      elif int(g.motorDirConfig[self.motorNo]) == -1:
-        g.serClient.cmdMotorAPWM(g.motorTestPwm[self.motorNo])
-    elif self.motorNo == 1:
-      if int(g.motorDirConfig[self.motorNo]) == 1:
-        g.serClient.cmdMotorBPWM(-g.motorTestPwm[self.motorNo])
-      elif int(g.motorDirConfig[self.motorNo]) == -1:
-        g.serClient.cmdMotorBPWM(g.motorTestPwm[self.motorNo])
+    if int(g.motorDirConfig[self.motorNo]) == 1:
+      g.motorController.writePWM(self.motorNo+1, -g.motorTestPwm[self.motorNo])
+    elif int(g.motorDirConfig[self.motorNo]) == -1:
+      g.motorController.writePWM(self.motorNo+1, g.motorTestPwm[self.motorNo])
 
   def stopReverseCommand(self, e):
     # print("stop reverse command")
-    g.serClient.cmdMotorAPWM(0)
-    g.serClient.cmdMotorBPWM(0)
-    
-
-
-
-# motorCommandButton.pack(side="top", fill="x", padx=(100,100), pady=(20,50))
+    g.motorController.writePWM(self.motorNo+1, 0)

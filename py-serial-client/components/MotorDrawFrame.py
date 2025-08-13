@@ -28,10 +28,7 @@ class MotorDrawFrame(tb.Frame):
     buttonStyleName = 'danger.TButton'
     buttonStyle.configure(buttonStyleName, font=('Monospace',10, 'bold'))
 
-    if self.motorNo == 0:
-      g.motorAngPos[self.motorNo], g.motorAngVel[self.motorNo] = g.serClient.getMotorAData()
-    elif self.motorNo == 1:
-      g.motorAngPos[self.motorNo], g.motorAngVel[self.motorNo] = g.serClient.getMotorBData()
+    g.motorAngPos[self.motorNo], g.motorAngVel[self.motorNo], _ = g.motorController.readData(self.motorNo+1)
 
     self.posText = tb.Label(self.textFrame1, text="POS(rad):", font=('Monospace',10, 'bold') ,bootstyle="danger")
     self.posVal = tb.Label(self.textFrame1, text=g.motorAngPos[self.motorNo], font=('Monospace',10), bootstyle="dark")
@@ -86,24 +83,13 @@ class MotorDrawFrame(tb.Frame):
 
   def sendPwmCtrl(self):
     if g.motorIsOn[self.motorNo]:
-      isSuccess = False
-      if self.motorNo == 0:
-        isSuccess = g.serClient.cmdMotorAPWM(0)
-      elif self.motorNo == 1:
-        isSuccess = g.serClient.cmdMotorBPWM(0)
-
+      isSuccess = g.motorController.writePWM(self.motorNo+1, 0)
       if isSuccess:
         g.motorIsOn[self.motorNo] = False
         self.button2.configure(text="START MOTOR")
+
     else:
-      isSuccess = False
-      
-      #---------------------------------------------------------------------#
-      if self.motorNo == 0:
-        isSuccess = g.serClient.cmdMotorAPWM(g.motorTestPwm[self.motorNo])
-      elif self.motorNo == 1:
-        isSuccess = g.serClient.cmdMotorBPWM(g.motorTestPwm[self.motorNo])
-      #---------------------------------------------------------------------#
+      isSuccess = g.motorController.writePWM(self.motorNo+1, g.motorTestPwm[self.motorNo])
       if isSuccess:
         g.motorIsOn[self.motorNo] = True
         g.motorStartTime[self.motorNo] = time.time()
@@ -114,11 +100,7 @@ class MotorDrawFrame(tb.Frame):
 
   def draw_motor_ang_pos(self):
     if g.motorIsOn[self.motorNo] and g.motorTestDuration[self.motorNo] < time.time()-g.motorStartTime[self.motorNo]:
-        isSuccess = False
-        if self.motorNo == 0:
-          isSuccess = g.serClient.cmdMotorAPWM(0)
-        elif self.motorNo == 1:
-          isSuccess = g.serClient.cmdMotorBPWM(0)
+        isSuccess = g.motorController.writePWM(self.motorNo+1, 0)
         if isSuccess:
           g.motorIsOn[self.motorNo] = False
           self.button2.configure(text="START MOTOR")
@@ -127,10 +109,7 @@ class MotorDrawFrame(tb.Frame):
     self.canvas.delete(self.mid_circle)
 
     try:
-      if self.motorNo == 0:
-        g.motorAngPos[self.motorNo], g.motorAngVel[self.motorNo] = g.serClient.getMotorAData()
-      elif self.motorNo == 1:
-        g.motorAngPos[self.motorNo], g.motorAngVel[self.motorNo] = g.serClient.getMotorBData()
+      g.motorAngPos[self.motorNo], g.motorAngVel[self.motorNo], _ = g.motorController.readData(self.motorNo+1)
       
     except:
       pass

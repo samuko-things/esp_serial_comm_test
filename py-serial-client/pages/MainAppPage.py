@@ -29,20 +29,17 @@ class MainAppFrame(tb.Frame):
     buttonStyleName = 'primary.Link.TButton'
     buttonStyle.configure(buttonStyleName, font=('Monospace',12, 'bold'))
 
-    self.button1 = tb.Button(self.sideNavFrame, text="MOTOR A ENC", style=buttonStyleName,
+    self.button1 = tb.Button(self.sideNavFrame, text="MOTOR 1 ENC", style=buttonStyleName,
                              command= lambda: self.displayPage(self.button1, self.displayMotorAEncSetupPage))
     
-    self.button2 = tb.Button(self.sideNavFrame, text="MOTOR A PID", style=buttonStyleName,
+    self.button2 = tb.Button(self.sideNavFrame, text="MOTOR 1 PID", style=buttonStyleName,
                              command= lambda: self.displayPage(self.button2, self.displaymotorAPidSetupPage))
     
-    self.button3 = tb.Button(self.sideNavFrame, text="MOTOR B ENC", style=buttonStyleName,
+    self.button3 = tb.Button(self.sideNavFrame, text="MOTOR 2 ENC", style=buttonStyleName,
                              command= lambda: self.displayPage(self.button3, self.displayMotorBEncSetupPage))
     
-    self.button4 = tb.Button(self.sideNavFrame, text="MOTOR B PID", style=buttonStyleName,
+    self.button4 = tb.Button(self.sideNavFrame, text="MOTOR 2 PID", style=buttonStyleName,
                              command= lambda: self.displayPage(self.button4, self.displaymotorBPidSetupPage))
-    
-    # self.button5 = tb.Button(self.sideNavFrame, text="I2C SETUP", style=buttonStyleName,
-    #                          command= lambda: self.displayPage(self.button5, self.displayI2CSetupPage))
     
     # self.button6 = tb.Button(self.sideNavFrame, text="RESET PARAMS", style=buttonStyleName,
     #                          command= lambda: self.displayPage(self.button6, self.displayResetPage))
@@ -54,7 +51,6 @@ class MainAppFrame(tb.Frame):
     self.button2.pack(side="top", fill="x", padx=5, pady=(10,35))
     self.button3.pack(side="top", fill="x", padx=5, pady=10)
     self.button4.pack(side="top", fill="x", padx=5, pady=(10,35))
-    # self.button5.pack(side="top", fill="x", padx=5, pady=10)
     # self.button6.pack(side="top", fill="x", padx=5, pady=10)
 
 
@@ -75,7 +71,6 @@ class MainAppFrame(tb.Frame):
     self.button2.configure(state="normal")
     self.button3.configure(state="normal")
     self.button4.configure(state="normal")
-    # self.button5.configure(state="normal")
     # self.button6.configure(state="normal")
   
   def displayPage(self, button, page):
@@ -93,9 +88,6 @@ class MainAppFrame(tb.Frame):
   #   self.resetFrame = ResetSetupFrame(self.mainContentFrame)
   #   self.resetFrame.pack(side="left", expand=True, fill="both")
   
-  # def displayI2CSetupPage(self):
-  #   self.i2cSetupFrame = I2CSetupFrame(self.mainContentFrame)
-  #   self.i2cSetupFrame.pack(side="left", expand=True, fill="both")
   
   def displayMotorAEncSetupPage(self):
     self.motorAEncSetupFrame = EncSetupFrame(self.mainContentFrame, motorNo=0)
