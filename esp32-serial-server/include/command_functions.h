@@ -135,7 +135,7 @@ float rdir[2] = {
 // float maxVelB = calc_wB_allowable(); // in radians/sec
 
 // for command timeout.
-unsigned long cmdVelTimeoutInterval = 4000; // ms -> (1000/sampleTime) hz
+unsigned long cmdVelTimeoutInterval = 0; // ms -> (1000/sampleTime) hz
 unsigned long cmdVelTimeout[2];
 //-------------------------------------------------//
 
@@ -187,18 +187,18 @@ String writeMotorSpeed(int motor_no, float targetVel)
 }
 
 
-String setPidModeFunc(int motor_no, int mode)
-{
-  pidMode[motor_no-1] = mode;
-  motor[motor_no-1].sendPWM(0);
-  pidMotor[motor_no-1].begin();
+// String setPidModeFunc(int motor_no, int mode)
+// {
+//   pidMode[motor_no-1] = mode;
+//   motor[motor_no-1].sendPWM(0);
+//   pidMotor[motor_no-1].begin();
 
-  return "1";
-}
-String getPidModeFunc(int motor_no)
-{
-  return String(pidMode[motor_no-1]);
-}
+//   return "1";
+// }
+// String getPidModeFunc(int motor_no)
+// {
+//   return String(pidMode[motor_no-1]);
+// }
 
 
 String setEncoderPPR(int motor_no, float ppr)
@@ -289,10 +289,6 @@ String setCmdTimeout(int timeout)
   else
   {
     cmdVelTimeoutInterval = cmdTimeout;
-  }
-  for (int i=0; i<2; i+=1)
-  {
-    cmdVelTimeout[i] = millis();
   }
   return "1";
 }

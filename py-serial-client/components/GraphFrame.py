@@ -186,17 +186,17 @@ class GraphFrame(tb.Frame):
         self.deletePlot(self.plotLineBufferA, self.plotLineBufferB)
         self.plotButton.configure(text='START PLOT')
         self.clearPlot = False
-        g.motorController.setParam('/mode', self.motorNo+1, 0)
+        # g.motorController.setParam('/mode', self.motorNo+1, 0)
         time.sleep(0.1)
 
     elif self.doPlot:
         self.doPlot = False 
-        g.motorController.setParam('/mode', self.motorNo+1, 0)
+        # g.motorController.setParam('/mode', self.motorNo+1, 0)
         # print('stop plot')
     else:
         self.doPlot = True 
         self.doPlotTime = time.time()
-        g.motorController.setParam('/mode', self.motorNo+1, 1)
+        # g.motorController.setParam('/mode', self.motorNo+1, 1)
         # print('start plot')
 
 

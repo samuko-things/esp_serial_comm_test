@@ -124,33 +124,24 @@ void loop()
     pidTime = now;
   }
 
-  // // check to see if motor has stopped
-  // for (int i=0; i<2; i+=1){
-  //   if (abs(target[i]) < 0.01)
-  //   {
-  //     if (pidMode[i] == 1)
-  //     {
-  //       if ((now - pidStopTime[i]) >= pidStopTimeInterval)
-  //       {
-  //         target[i] = 0.00;
-  //         setPidModeFunc(i, 0);
-  //         pidStopTime[i] = now;
-  //       }
-  //     }
-  //     else
-  //     {
-  //       pidStopTime[i] = now;
-  //     }
-  //   }
-  //   else
-  //   {
-  //     if (pidMode[i] == 0)
-  //     {
-  //       setPidModeFunc(i, 1);
-  //     }
-  //     pidStopTime[i] = now;
-  //   }
-  // }
+  // check to see if motor has stopped
+  for (int i=0; i<2; i+=1){
+    if (fabs(target[i]) < 0.01 && pidMode[1] == 1)
+    {
+      if ((millis() - pidStopTime[i]) >= pidStopTimeInterval)
+      {
+        target[i] = 0.00;
+        pidMode[i] = 0;
+        motor[i].sendPWM(0);
+        isMotorCommanded[i] = 0;
+        pidStopTime[i] = millis();
+      }
+    }
+    else
+    {
+      pidStopTime[i] = millis();
+    }
+  }
   
   // command timeout
   int cmdTimeout = (int)cmdVelTimeoutInterval;

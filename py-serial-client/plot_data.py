@@ -51,8 +51,9 @@ fig = plt.figure()  # Create Matplotlib plots fig is the 'higher level' plot win
 axes = fig.add_subplot(111) # Add subplot to main fig window
 
 if __name__ == '__main__':
-  # res = motorController.setParam("/cmd-timeout", 0, 4000)
-  # print(res)
+  motorController.setParam("/cmd-timeout", 0, 5000)
+  res = motorController.getParam("/cmd-timeout", 0)
+  print('cmd_timeout: ', res)
 
   pidMode = 1
   # res = motorController.setParam("/mode", 1, pidMode)
@@ -63,7 +64,7 @@ if __name__ == '__main__':
   # res = motorController.getParam("/mode", 2)
   # print('mode_2: ', res)
 
-  # print()
+  print()
 
 
   motorController.setParam("/ppr", 1, 374.25)
@@ -102,11 +103,9 @@ if __name__ == '__main__':
   if pidMode == 1:
     res = motorController.writeSpeed(1, 6.284)
     print(res)
-    time.sleep(2.0)
+    # time.sleep(2.0)
     res = motorController.writeSpeed(2, 6.284)
     print(res)
-
-  
 
   if pidMode == 0:
     res = motorController.writePWM(1, 70)
@@ -114,19 +113,19 @@ if __name__ == '__main__':
     res = motorController.writePWM(2, 100)
     print(res)
 
-  # time.sleep(10.0)
+  time.sleep(2.5)
 
-  # if pidMode == 1:
-  #   res = motorController.writeSpeed(1, 0.00)
-  #   print(res)
-  #   res = motorController.writeSpeed(2, 0.00)
-  #   print(res)
+  if pidMode == 1:
+    res = motorController.writeSpeed(1, 0.00)
+    print(res)
+    res = motorController.writeSpeed(2, 0.00)
+    print(res)
 
-  # if pidMode == 0:
-  #   res = motorController.writePWM(1, 0)
-  #   print(res)
-  #   res = motorController.writePWM(2, 0)
-  #   print(res)
+  if pidMode == 0:
+    res = motorController.writePWM(1, 0)
+    print(res)
+    res = motorController.writePWM(2, 0)
+    print(res)
 
 
 
