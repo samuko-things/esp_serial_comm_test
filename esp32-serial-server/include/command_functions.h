@@ -103,6 +103,11 @@ int pidMode[2] = {
   0
 }; // 1-PID MODE, 0-SETUP/PWM MODE
 
+int isMotorCommanded[2] = {
+  0,
+  0
+};
+
 float rdir[2] = {
   1.0,
   1.0
@@ -164,21 +169,20 @@ String readMotorPidVel(int motor_no)
 
 String writeMotorPWM(int motor_no, int pwm)
 {
-  if (pidMode[motor_no-1] == 0){
-    motor[motor_no-1].sendPWM(pwm);
-    cmdVelTimeout[motor_no-1] = millis();
-    return "1";
-  }
-  else {
-    return "0";
-  }
+  pidMode[motor_no-1] = 0;
+  motor[motor_no-1].sendPWM(pwm);
+  cmdVelTimeout[motor_no-1] = millis();
+  isMotorCommanded[motor_no-1] = 1;
+  return "1";
 }
 
 
 String writeMotorSpeed(int motor_no, float targetVel)
 {
+  pidMode[motor_no-1] = 1;
   target[motor_no-1] = targetVel;
   cmdVelTimeout[motor_no-1] = millis();
+  isMotorCommanded[motor_no-1] = 1;
   return "1";
 }
 

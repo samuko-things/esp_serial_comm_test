@@ -54,16 +54,16 @@ if __name__ == '__main__':
   # res = motorController.setParam("/cmd-timeout", 0, 4000)
   # print(res)
 
-  pidMode = 0
-  res = motorController.setParam("/mode", 1, pidMode)
-  print(res)
-  res = motorController.getParam("/mode", 1)
-  print('mode_1: ', res)
-  motorController.setParam("/mode", 2, pidMode)
-  res = motorController.getParam("/mode", 2)
-  print('mode_2: ', res)
+  pidMode = 1
+  # res = motorController.setParam("/mode", 1, pidMode)
+  # print(res)
+  # res = motorController.getParam("/mode", 1)
+  # print('mode_1: ', res)
+  # motorController.setParam("/mode", 2, pidMode)
+  # res = motorController.getParam("/mode", 2)
+  # print('mode_2: ', res)
 
-  print()
+  # print()
 
 
   motorController.setParam("/ppr", 1, 374.25)
@@ -102,8 +102,11 @@ if __name__ == '__main__':
   if pidMode == 1:
     res = motorController.writeSpeed(1, 6.284)
     print(res)
+    time.sleep(2.0)
     res = motorController.writeSpeed(2, 6.284)
     print(res)
+
+  
 
   if pidMode == 0:
     res = motorController.writePWM(1, 70)
@@ -111,19 +114,19 @@ if __name__ == '__main__':
     res = motorController.writePWM(2, 100)
     print(res)
 
-  time.sleep(5.0)
+  # time.sleep(10.0)
 
-  if pidMode == 1:
-    res = motorController.writeSpeed(1, 0.00)
-    print(res)
-    res = motorController.writeSpeed(2, 0.00)
-    print(res)
+  # if pidMode == 1:
+  #   res = motorController.writeSpeed(1, 0.00)
+  #   print(res)
+  #   res = motorController.writeSpeed(2, 0.00)
+  #   print(res)
 
-  if pidMode == 0:
-    res = motorController.writePWM(1, 0)
-    print(res)
-    res = motorController.writePWM(2, 0)
-    print(res)
+  # if pidMode == 0:
+  #   res = motorController.writePWM(1, 0)
+  #   print(res)
+  #   res = motorController.writePWM(2, 0)
+  #   print(res)
 
 
 

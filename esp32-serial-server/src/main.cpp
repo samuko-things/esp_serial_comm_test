@@ -72,7 +72,7 @@ void setup()
 
   encoderInit();
   velFilterInit();
-  pidInit();
+  pidInit(); 
 
   // Initialize timing markers
   unsigned long now = millis();
@@ -82,11 +82,9 @@ void setup()
   pidTime          = now;
   for (int i=0; i<2; i+=1){
     pidStopTime[i] = now;
-  }
-  for (int i=0; i<2; i+=1){
     cmdVelTimeout[i] = now;
+    isMotorCommanded[i] = 0;
   }
-  cmdVelTimeoutInterval = 4000;
 }
 
 void loop()
@@ -155,19 +153,21 @@ void loop()
   // }
   
   // command timeout
-  // int cmdTimeout = (int)cmdVelTimeoutInterval;
-  // if (cmdVelTimeoutInterval > 0)
-  // {
-  //   for (int i=0; i<2; i+=1){
-  //     if ((millis() - cmdVelTimeout[i]) >= cmdVelTimeoutInterval)
-  //     {
-  //       target[i] = 0.00;
-  //       pidMode[i] = 0;
-  //       motor[i].sendPWM(0);
-  //       pidMotor[i].begin();
-  //       // String val = setPidModeFunc(i, 0); // stop motor
-  //     }
-  //   }
-  // }
+  int cmdTimeout = (int)cmdVelTimeoutInterval;
+  if (cmdVelTimeoutInterval > 0)
+  {
+    for (int i=0; i<2; i+=1){
+      if (!isMotorCommanded[i]) {
+        cmdVelTimeout[i] = millis();
+      }
+      if (isMotorCommanded[i] && ((millis() - cmdVelTimeout[i]) >= cmdVelTimeoutInterval))
+      {
+        target[i] = 0.00;
+        pidMode[i] = 0;
+        motor[i].sendPWM(0);
+        isMotorCommanded[i] = 0;
+      }
+    }
+  }
   
 }
