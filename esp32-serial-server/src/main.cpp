@@ -3,63 +3,63 @@
 #include "command_functions.h"
 
 
-void IRAM_ATTR readEncoderA()
+void IRAM_ATTR readEncoder1()
 {
-  if (digitalRead(encA.clkPin) == digitalRead(encA.dirPin))
+  if (digitalRead(encoder[0].clkPin) == digitalRead(encoder[0].dirPin))
   {
-    encA.tickCount -= 1;
+    encoder[0].tickCount -= 1;
   }
   else
   {
-    encA.tickCount += 1;
+    encoder[0].tickCount += 1;
   }
 }
 
-void IRAM_ATTR readEncoderB()
+void IRAM_ATTR readEncoder2()
 {
-  if (digitalRead(encB.clkPin) == digitalRead(encB.dirPin))
+  if (digitalRead(encoder[1].clkPin) == digitalRead(encoder[1].dirPin))
   {
-    encB.tickCount -= 1;
+    encoder[1].tickCount -= 1;
   }
   else
   {
-    encB.tickCount += 1;
+    encoder[1].tickCount += 1;
   }
 }
 
 void encoderInit()
 {
-  encA.setPulsePerRev(encA_ppr);
-  encB.setPulsePerRev(encB_ppr);
+  for (int i=0; i<2; i+=1){
+    encoder[i].setPulsePerRev(enc_ppr[i]);
+  }
 
-  attachInterrupt(digitalPinToInterrupt(encA.clkPin), readEncoderA, RISING);
-  attachInterrupt(digitalPinToInterrupt(encB.clkPin), readEncoderB, RISING);
+  attachInterrupt(digitalPinToInterrupt(encoder[0].clkPin), readEncoder1, RISING);
+  attachInterrupt(digitalPinToInterrupt(encoder[1].clkPin), readEncoder2, RISING);
 }
 
 void velFilterInit()
 {
-  velFilterA.setOrder(1);
-  velFilterA.setCutOffFreq(velFilterCutOffFreqA);
-
-  velFilterB.setOrder(1);
-  velFilterB.setCutOffFreq(velFilterCutOffFreqB);
+  for (int i=0; i<2; i+=1){
+    velFilter[i].setCutOffFreq(cutOffFreq[i]);
+  }
 }
 
 void pidInit()
 {
-  pidMotorA.setParameters(kpA, kiA, kdA, outMin, outMax);
-  pidMotorB.setParameters(kpB, kiB, kdB, outMin, outMax);
-  pidMotorA.begin();
-  pidMotorB.begin();
+  for (int i=0; i<2; i+=1){
+    pidMotor[i].setParameters(kp[i], ki[i], kd[i], outMin, outMax);
+    pidMotor[i].begin();
+  }
 }
 
 
 //---------------------------------------------------------------------------------------------
 // Timing variables
+// please do not adjust any of the values as it can affect important operations
 unsigned long sensorUpdateTime, sensorUpdateTimeInterval = 5;
 unsigned long serialLoopTime, serialLoopTimeInterval = 5;
 unsigned long pidTime, pidTimeInterval = 20;
-// unsigned long pidStopTime, pidStopTimeInterval = 250;
+unsigned long pidStopTime, pidStopTimeInterval = 200;
 //---------------------------------------------------------------------------------------------
 
 void setup()
@@ -80,6 +80,10 @@ void setup()
   sensorUpdateTime = now;
   serialLoopTime   = now;
   pidTime          = now;
+  pidStopTime      = now;
+  // for (int i=0; i<2; i+=1){
+  //   cmdVelTimeout[i] = now;
+  // }
 }
 
 void loop()
@@ -88,16 +92,15 @@ void loop()
   // unsigned long now_us = micros();
 
   // Sensor update loop
-  if ((now - sensorUpdateTime) >= sensorUpdateTimeInterval)
-  {
-    unfilteredVelA = encA.getAngVel();
-    unfilteredVelB = encB.getAngVel();
-
-    filteredVelA = velFilterA.filter(unfilteredVelA);
-    filteredVelB = velFilterB.filter(unfilteredVelB);
-
-    sensorUpdateTime = now;
-  }
+  // if ((now - sensorUpdateTime) >= sensorUpdateTimeInterval)
+  // {
+  //   for (int i=0; i<2; i+=1)
+  //   {
+  //     unfilteredVel[i] = encoder[i].getAngVel();
+  //     filteredVel[i] = velFilter[i].filter(unfilteredVel[i]);
+  //   }
+  //   sensorUpdateTime = now;
+  // }
   
   // Serial comm loop
   if ((now - serialLoopTime) >= serialLoopTimeInterval)
@@ -107,16 +110,45 @@ void loop()
   }
 
   // PID control loop
-  if ((now - pidTime) >= pidTimeInterval)
-  {
-    if (pidMode)
-    {
-      outputA = pidMotorA.compute(targetA, filteredVelA);
-      outputB = pidMotorB.compute(targetB, filteredVelB);
+  // if ((now - pidTime) >= pidTimeInterval)
+  // {
+  //   for (int i=0; i<2; i+=1)
+  //   {
+  //     if (pidMode[i])
+  //     {
+  //       output[i] = pidMotor[i].compute(target[i], filteredVel[i]);
+  //       motor[i].sendPWM((int)output[i]);
+  //     }
+  //   }
+  //   pidTime = now;
+  // }
 
-      motorA.sendPWM((int)outputA);
-      motorB.sendPWM((int)outputB);
-    }
-    pidTime = now;
-  }
+  // // check to see if motor has stopped
+  // if ((now - pidStopTime) >= pidStopTimeInterval)
+  // {
+  //   for (int i=0; i<2; i+=1)
+  //   {
+  //     if (pidMode[i])
+  //     {
+  //       if (abs(target[i]) < 0.01)
+  //       {
+  //         target[i] = 0.00;
+  //         setPidModeFunc(i, 0);
+  //       }
+  //     }
+  //   }
+  //   pidStopTime = now;
+  // }
+  
+  // // command timeout
+  // int cmdTimeout = (int)cmdVelTimeoutInterval;
+  // if (cmdTimeout > 0)
+  
+  // for (int i=0; i<2; i+=1){
+  //   if ((now - cmdVelTimeout[i]) >= cmdVelTimeoutInterval)
+  //   {
+  //     target[i] = 0.00;
+  //     setPidModeFunc(i, 0); // stop motor
+  //   }
+  // }
 }

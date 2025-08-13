@@ -3,7 +3,7 @@
 
 #include "command_functions.h"
 
-String dataMsg = "", dataMsgBuffer, dataMsgBufferArray[3];
+String dataMsg = "", dataMsgBuffer = "", dataMsgBufferArray[3];
 String sendMsg = "";
 
 
@@ -41,169 +41,168 @@ void recieve_and_send_data(){
 
     if (dataMsgBufferArray[0] != "")
     {
+      int motor_no = dataMsgBufferArray[1].toInt();
+      bool motor_no_not_found = (motor_no <= 0) || (motor_no > 2);
+
       digitalWrite(LED_BUILTIN, HIGH);
 
-      if (dataMsgBufferArray[0] == "/motorA-data")
+      if (dataMsgBufferArray[0] == "/data")
       {
-        sendMsg = readMotorAData();
+        if (motor_no_not_found)
+          sendMsg = "0.0,0.0,0.0";
+        else
+          sendMsg = readMotorData(motor_no);
         Serial.println(sendMsg);
       }
 
-      else if (dataMsgBufferArray[0] == "/motorB-data")
+      else if (dataMsgBufferArray[0] == "/pvel")
       {
-        sendMsg = readMotorBData();
+        if (motor_no_not_found)
+          sendMsg = "0.0,0.0";
+        else
+          sendMsg = readMotorPidVel(motor_no);
         Serial.println(sendMsg);
       }
 
-      else if (dataMsgBufferArray[0] == "/motorA-pid-vel")
+      else if (dataMsgBufferArray[0] == "/pwm")
       {
-        sendMsg = readMotorA_PID_vel();
+        if (motor_no_not_found)
+          sendMsg = "0";
+        else
+          sendMsg = writeMotorPWM(motor_no, dataMsgBufferArray[2].toInt());
         Serial.println(sendMsg);
       }
 
-      else if (dataMsgBufferArray[0] == "/motorB-pid-vel")
+      else if (dataMsgBufferArray[0] == "/vel")
       {
-        sendMsg = readMotorB_PID_vel();
-        Serial.println(sendMsg);
-      }
-
-      else if (dataMsgBufferArray[0] == "/motorA-pwm")
-      {
-        sendMsg = cmdMotorAPWM(dataMsgBufferArray[1].toInt());
-        Serial.println(sendMsg);
-      }
-
-      else if (dataMsgBufferArray[0] == "/motorB-pwm")
-      {
-        sendMsg = cmdMotorBPWM(dataMsgBufferArray[1].toInt());
-        Serial.println(sendMsg);
-      }
-
-      else if (dataMsgBufferArray[0] == "/motorA-vel")
-      {
-        sendMsg = cmdMotorAVel(dataMsgBufferArray[1].toFloat());
-        Serial.println(sendMsg);
-      }
-
-      else if (dataMsgBufferArray[0] == "/motorB-vel")
-      {
-        sendMsg = cmdMotorBVel(dataMsgBufferArray[1].toFloat());
+        if (motor_no_not_found)
+          sendMsg = "0";
+        else
+          sendMsg = writeMotorSpeed(motor_no, dataMsgBufferArray[2].toFloat());
         Serial.println(sendMsg);
       }
 
       else if (dataMsgBufferArray[0] == "/mode")
       {
-        sendMsg = setPidModeFunc(dataMsgBufferArray[1].toInt());
+        if (motor_no_not_found)
+          sendMsg = "0";
+        else
+          // sendMsg = setPidModeFunc(motor_no, dataMsgBufferArray[2].toInt());
+          sendMsg = String(motor_no);
+      }
+
+      else if (dataMsgBufferArray[0] == "/ppr")
+      {
+        if (dataMsgBufferArray[2] == ""){
+          if (motor_no_not_found)
+            sendMsg = "0.0";
+          else
+            sendMsg = getEncoderPPR(motor_no);
+        }
+        else {
+          if (motor_no_not_found)
+            sendMsg = "0";
+          else
+            sendMsg = setEncoderPPR(motor_no, dataMsgBufferArray[2].toFloat());
+        }
         Serial.println(sendMsg);
       }
 
-      else if (dataMsgBufferArray[0] == "/pprA")
+      else if (dataMsgBufferArray[0] == "/kp")
       {
-        if (dataMsgBufferArray[1] == "")
-          sendMsg = sendEncAppr();
-        else
-          sendMsg = setEncAppr(dataMsgBufferArray[1].toFloat());
+        if (dataMsgBufferArray[2] == ""){
+          if (motor_no_not_found)
+            sendMsg = "0.0";
+          else
+            sendMsg = getMotorKp(motor_no);
+        }
+        else {
+          if (motor_no_not_found)
+            sendMsg = String(motor_no);
+          else
+            sendMsg = setMotorKp(motor_no, dataMsgBufferArray[2].toFloat());
+        }
         Serial.println(sendMsg);
       }
 
-      else if (dataMsgBufferArray[0] == "/pprB")
+      else if (dataMsgBufferArray[0] == "/ki")
       {
-        if (dataMsgBufferArray[1] == "")
-          sendMsg = sendEncBppr();
-        else
-          sendMsg = setEncBppr(dataMsgBufferArray[1].toFloat());
+        if (dataMsgBufferArray[2] == ""){
+          if (motor_no_not_found)
+            sendMsg = "0.0";
+          else
+            sendMsg = getMotorKi(motor_no);
+        }
+        else {
+          if (motor_no_not_found)
+            sendMsg = "0";
+          else
+            sendMsg = setMotorKi(motor_no, dataMsgBufferArray[2].toFloat());
+        }
         Serial.println(sendMsg);
       }
 
-      else if (dataMsgBufferArray[0] == "/kpA")
+      else if (dataMsgBufferArray[0] == "/kd")
       {
-        if (dataMsgBufferArray[1] == "")
-          sendMsg = sendMotorAkp();
-        else
-          sendMsg = setMotorAkp(dataMsgBufferArray[1].toFloat());
+        if (dataMsgBufferArray[2] == ""){
+          if (motor_no_not_found)
+            sendMsg = "0.0";
+          else
+            sendMsg = getMotorKd(motor_no);
+        }
+        else {
+          if (motor_no_not_found)
+            sendMsg = "0";
+          else
+            sendMsg = setMotorKd(motor_no, dataMsgBufferArray[2].toFloat());
+        }
         Serial.println(sendMsg);
       }
 
-      else if (dataMsgBufferArray[0] == "/kpB")
+      else if (dataMsgBufferArray[0] == "/rdir")
       {
-        if (dataMsgBufferArray[1] == "")
-          sendMsg = sendMotorBkp();
-        else
-          sendMsg = setMotorBkp(dataMsgBufferArray[1].toFloat());
+        if (dataMsgBufferArray[2] == ""){
+          if (motor_no_not_found)
+            sendMsg = "0.0";
+          else
+            sendMsg = getRdir(motor_no);
+        }
+        else {
+          if (motor_no_not_found)
+            sendMsg = "0";
+          else
+            sendMsg = setRdir(motor_no, dataMsgBufferArray[2].toFloat());
+        }
         Serial.println(sendMsg);
       }
 
-      else if (dataMsgBufferArray[0] == "/kiA")
+      else if (dataMsgBufferArray[0] == "/cut-freq")
       {
-        if (dataMsgBufferArray[1] == "")
-          sendMsg = sendMotorAki();
-        else
-          sendMsg = setMotorAki(dataMsgBufferArray[1].toFloat());
+        if (dataMsgBufferArray[2] == ""){
+          if (motor_no_not_found)
+            sendMsg = "0.0";
+          else
+            sendMsg = getCutoffFreq(motor_no);
+        }
+        else {
+          if (motor_no_not_found)
+            sendMsg = "0";
+          else
+            sendMsg = setCutoffFreq(motor_no, dataMsgBufferArray[2].toFloat());
+        }
         Serial.println(sendMsg);
       }
 
-      else if (dataMsgBufferArray[0] == "/kiB")
-      {
-        if (dataMsgBufferArray[1] == "")
-          sendMsg = sendMotorBki();
-        else
-          sendMsg = setMotorBki(dataMsgBufferArray[1].toFloat());
-        Serial.println(sendMsg);
-      }
-
-      else if (dataMsgBufferArray[0] == "/kdA")
-      {
-        if (dataMsgBufferArray[1] == "")
-          sendMsg = sendMotorAkd();
-        else
-          sendMsg = setMotorAkd(dataMsgBufferArray[1].toFloat());
-        Serial.println(sendMsg);
-      }
-
-      else if (dataMsgBufferArray[0] == "/kdB")
-      {
-        if (dataMsgBufferArray[1] == "")
-          sendMsg = sendMotorBkd();
-        else
-          sendMsg = setMotorBkd(dataMsgBufferArray[1].toFloat());
-        Serial.println(sendMsg);
-      }
-
-      else if (dataMsgBufferArray[0] == "/rdirA")
-      {
-        if (dataMsgBufferArray[1] == "")
-          sendMsg = sendRdirA();
-        else
-          sendMsg = setRdirA(dataMsgBufferArray[1].toFloat());
-        Serial.println(sendMsg);
-      }
-
-      else if (dataMsgBufferArray[0] == "/rdirB")
-      {
-        if (dataMsgBufferArray[1] == "")
-          sendMsg = sendRdirB();
-        else
-          sendMsg = setRdirB(dataMsgBufferArray[1].toFloat());
-        Serial.println(sendMsg);
-      }
-
-      else if (dataMsgBufferArray[0] == "/f0A")
-      {
-        if (dataMsgBufferArray[1] == "")
-          sendMsg = sendVelFilterCutoffFreqA();
-        else
-          sendMsg = setVelFilterCutoffFreqA(dataMsgBufferArray[1].toFloat());
-        Serial.println(sendMsg);
-      }
-
-      else if (dataMsgBufferArray[0] == "/f0B")
-      {
-        if (dataMsgBufferArray[1] == "")
-          sendMsg = sendVelFilterCutoffFreqB();
-        else
-          sendMsg = setVelFilterCutoffFreqB(dataMsgBufferArray[1].toFloat());
-        Serial.println(sendMsg);
-      }
+      // else if (dataMsgBufferArray[0] == "/cmd-timeout")
+      // {
+      //   if (dataMsgBufferArray[2] == ""){
+      //     sendMsg = getCmdTimeout();
+      //   }
+      //   else {
+      //     sendMsg = setCmdTimeout(dataMsgBufferArray[2].toInt());
+      //   }
+      //   Serial.println(sendMsg);
+      // }
 
       digitalWrite(LED_BUILTIN, LOW);
     }

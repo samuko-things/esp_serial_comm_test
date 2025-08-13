@@ -7,358 +7,300 @@
 #include "adaptive_low_pass_filter.h"
 #include "simple_pid_control.h"
 
+
+
+
 //--------------- global variables -----------------//
-int ledState = 0;
-float sensorA, sensorB, sensorC;
 
-// motor A H-Bridge Connection
+// motor 1 H-Bridge Connection
 int IN1 = 26, IN2 = 27, enA = 25;
-L298NMotorControl motorA(IN1, IN2, enA);
-
-// motor B H-Bridge Connection
+// motor 2 H-Bridge Connection
 int IN3 = 14, IN4 = 12, enB = 13;
-L298NMotorControl motorB(IN3, IN4, enB);
+
+L298NMotorControl motor[2] = {
+  L298NMotorControl(IN1, IN2, enA), // motor 1
+  L298NMotorControl(IN3, IN4, enB) // motor 2
+};
+
 
 // store encoder pulsePerRev needed by encoder
-float encA_ppr = 374.25;
-float encB_ppr = 374.25;
+// float enc1_ppr = 374.25;
+// float enc2_ppr = 374.25;
+float enc_ppr[2]={
+  1000.0, // motor 1 encoder pulse per revolution parameter
+  1000.0 // motor 2 encoder pulse per revolution parameter
+};
 
-int encA_clkPin = 18, encA_dirPin = 19; // encA_ppr parameter is decleared globally in the global_params_eeprom.h file.
-int encB_clkPin = 16, encB_dirPin = 17; // encB_ppr parameter is decleared globally in the global_params_eeprom.h file.
+// motor 1 encoder connection
+int enc1_clkPin = 18, enc1_dirPin = 19;
+// motor 2 encoder connection
+int enc2_clkPin = 16, enc2_dirPin = 17;
 
-QuadEncoder encA(encA_clkPin, encA_dirPin, encA_ppr);
-QuadEncoder encB(encB_clkPin, encB_dirPin, encB_ppr);
+QuadEncoder encoder[2] = {
+  QuadEncoder(enc1_clkPin, enc1_dirPin, enc_ppr[0]), // motor 1 encoder connection
+  QuadEncoder(enc2_clkPin, enc2_dirPin, enc_ppr[1]) // motor 2 encoder connection
+};
 
 // adaptive lowpass Filter
-float velFilterCutOffFreqA = 1.0;
-float velFilterCutOffFreqB = 1.0;
+const int filterOrder = 1;
+float cutOffFreq[2] = {
+  1.0, // motor 1 velocity filter cutoff frequency
+  1.0 // motor 2 velocity filter cutoff frequency
+};
 
-// Filter instance
-AdaptiveLowPassFilter velFilterA(1, velFilterCutOffFreqA);
-AdaptiveLowPassFilter velFilterB(1, velFilterCutOffFreqB);
+AdaptiveLowPassFilter velFilter[2] = {
+  AdaptiveLowPassFilter(filterOrder, cutOffFreq[0]), // motor 1 velocity filter
+  AdaptiveLowPassFilter(filterOrder, cutOffFreq[1]) // motor 2 velocity filter
+};
 
-float filteredVelA=0.0, filteredVelB=0.0;
-float unfilteredVelA=0.0, unfilteredVelB=0.0;
+float filteredVel[2] = {
+  0.0,
+  0.0
+};
 
+float unfilteredVel[2] = {
+  0.0,
+  0.0
+};
+
+// motor PID parameters
 float outMin = -255.0, outMax = 255.0;
 
-// motorA pid control global params needed by pid
-float kpA = 0.0;
-float kiA = 0.0;
-float kdA = 0.0;
-float targetA = 0.00;
-float outputA;
+float kp[2] = {
+  0.0,
+  0.0
+};
 
-// motorB pid control global params needed by pid
-float kpB = 0.0;
-float kiB = 0.0;
-float kdB = 0.0;
-float targetB = 0.00;
-float outputB;
+float ki[2] = {
+  0.0,
+  0.0
+};
 
-// motorA pid control
-SimplePID pidMotorA(kpA, kiA, kdA, outMin, outMax);
+float kd[2] = {
+  0.0,
+  0.0
+};
 
-// motorA pid control
-SimplePID pidMotorB(kpB, kiB, kdB, outMin, outMax);
+float target[2] = {
+  0.0,
+  0.0
+};
+
+float output[2] = {
+  0.0,
+  0.0
+};
+
+SimplePID pidMotor[2] = {
+  SimplePID(kp[0], ki[0], kd[0], outMin, outMax),
+  SimplePID(kp[1], ki[1], kd[1], outMin, outMax),
+};
+
 
 // check if in PID or PWM mode
-bool pidMode = false; // true-PID MODE, false-SETUP MODE
+int pidMode[2] = {
+  0,
+  0
+}; // 1-PID MODE, 0-SETUP/PWM MODE
 
-float rdirA = 1.00;
-float rdirB = 1.00;
+float rdir[2] = {
+  1.0,
+  1.0
+};
 
-// calcute allowable maximum angular velocity (for overall smooth operation of the whole system)
-float freq_per_tick_allowable = 2000.0; // Hz
-float wA_allowable = 10.00;
-float wB_allowable = 10.00;
+// // calcute allowable maximum angular velocity (for overall smooth operation of the whole system)
+// float freq_per_tick_allowable = 2000.0; // Hz
+// float wA_allowable = 10.00;
+// float wB_allowable = 10.00;
 
-float calc_wA_allowable()
-{
-  wA_allowable = (2 * PI * freq_per_tick_allowable) / encA_ppr;
-  return wA_allowable;
-}
+// float calc_wA_allowable()
+// {
+//   wA_allowable = (2 * PI * freq_per_tick_allowable) / encA_ppr;
+//   return wA_allowable;
+// }
 
-float calc_wB_allowable()
-{
-  wB_allowable = (2 * PI * freq_per_tick_allowable) / encB_ppr;
-  return wB_allowable;
-}
+// float calc_wB_allowable()
+// {
+//   wB_allowable = (2 * PI * freq_per_tick_allowable) / encB_ppr;
+//   return wB_allowable;
+// }
 
-// maximum motor velocity that can be commanded
-float maxVelA = calc_wA_allowable(); // in radians/sec
-float maxVelB = calc_wB_allowable(); // in radians/sec
+// // maximum motor velocity that can be commanded
+// float maxVelA = calc_wA_allowable(); // in radians/sec
+// float maxVelB = calc_wB_allowable(); // in radians/sec
 
 // for command timeout.
-unsigned long cmdVelTimeout, cmdVelTimeoutSampleTime = 0; // ms -> (1000/sampleTime) hz
+unsigned long cmdVelTimeoutInterval = 0; // ms -> (1000/sampleTime) hz
+unsigned long cmdVelTimeout[2] = {
+  0,
+  0
+};
 //-------------------------------------------------//
 
+
+
+
+
+
 //--------------- global functions ----------------//
-String readMotorAData()
-{
-  float posData = encA.getAngPos();
-  float velData = encA.getAngVel();
+
+String readMotorData(int motor_no){
+  float posData = encoder[motor_no-1].getAngPos();
 
   String data = String(posData, 3);
   data += ",";
-  data += String(velData, 4);
-  return data;
-}
-
-String readMotorBData()
-{
-  float posData = encB.getAngPos();
-  float velData = encB.getAngVel();
-
-  String data = String(posData, 3);
+  data += String(filteredVel[motor_no-1], 4);
   data += ",";
-  data += String(velData, 4);
+  data += String(unfilteredVel[motor_no-1], 4);
   return data;
 }
 
-String readMotorA_PID_vel()
-{
-  // float actualVel = encA.getAngVel();
 
-  String data = String(targetA, 3);
+String readMotorPidVel(int motor_no)
+{
+  String data = String(target[motor_no-1], 4);
   data += ",";
-  data += String(filteredVelA, 4);
+  data += String(filteredVel[motor_no-1], 4);
   return data;
 }
 
-String readMotorB_PID_vel()
+
+String writeMotorPWM(int motor_no, int pwm)
 {
-  // float actualVel = encB.getAngVel();
-
-  String data = String(targetB, 3);
-  data += ",";
-  data += String(filteredVelB, 4);
-  return data;
-}
-
-String cmdMotorAPWM(int pwm)
-{
-  motorA.sendPWM(pwm);
-  return "1";
-}
-
-String cmdMotorBPWM(int pwm)
-{
-  motorB.sendPWM(pwm);
-  return "1";
-}
-
-String cmdMotorAVel(float targetVel)
-{
-  targetA = targetVel;
-  return "1";
-}
-
-String cmdMotorBVel(float targetVel)
-{
-  targetB = targetVel;
-  return "1";
-}
-
-
-String setPidModeFunc(int mode)
-{
-  if (mode == 0)
-  {
-    pidMode = false;
-    motorA.sendPWM(0);
-    motorB.sendPWM(0);
-    pidMotorA.begin();
-    pidMotorB.begin();
+  if (pidMode[motor_no-1] == 0){
+    motor[motor_no-1].sendPWM(pwm);
+    // cmdVelTimeout[motor_no-1] = millis();
+    return "1";
   }
-  else if (mode == 1)
-  {
-    pidMode = true;
-    motorA.sendPWM(0);
-    motorB.sendPWM(0);
-    pidMotorA.begin();
-    pidMotorB.begin();
+  else {
+    return "0";
   }
+}
+
+
+String writeMotorSpeed(int motor_no, float targetVel)
+{
+  if (pidMode[motor_no-1] == 1){
+    target[motor_no-1] = targetVel;
+    // cmdVelTimeout[motor_no-1] = millis();
+    return "1";
+  }
+  else {
+    return "0";
+  }
+}
+
+
+String setPidModeFunc(int motor_no, int mode)
+{
+  pidMode[motor_no-1] = mode;
+
+  motor[motor_no-1].sendPWM(0);
+  pidMotor[motor_no-1].begin();
+
   return "1";
 }
 
 
-
-String setEncAppr(float ppr)
+String setEncoderPPR(int motor_no, float ppr)
 {
-  // setPPR_A(ppr);
-  // encA_ppr = getPPR_A();
-  encA_ppr = ppr;
-  encA.setPulsePerRev(encA_ppr);
+  enc_ppr[motor_no-1] = ppr;
+  encoder[motor_no-1].setPulsePerRev(enc_ppr[motor_no-1]);
   return "1";
 }
-String sendEncAppr()
+String getEncoderPPR(int motor_no)
 {
-  return String(encA_ppr);
+  return String(enc_ppr[motor_no-1]);
 }
 
 
-
-String setEncBppr(float ppr)
+String setMotorKp(int motor_no, float Kp)
 {
-  encB_ppr = ppr;
-  encB.setPulsePerRev(encB_ppr);
+  kp[motor_no-1] = Kp;
+  pidMotor[motor_no-1].setKp(kp[motor_no-1]);
+  pidMotor[motor_no-1].begin();
   return "1";
 }
-String sendEncBppr()
+String getMotorKp(int motor_no)
 {
-  return String(encB_ppr);
+  return String(kp[motor_no-1], 4);
 }
 
 
-
-String setMotorAkp(float kp)
+String setMotorKi(int motor_no, float Ki)
 {
-  kpA = kp;
-  pidMotorA.setKp(kpA);
-  pidMotorA.begin();
+  ki[motor_no-1] = Ki;
+  pidMotor[motor_no-1].setKi(ki[motor_no-1]);
+  pidMotor[motor_no-1].begin();
   return "1";
 }
-String sendMotorAkp()
+String getMotorKi(int motor_no)
 {
-  return String(kpA, 4);
+  return String(ki[motor_no-1], 4);
 }
 
 
-
-String setMotorBkp(float kp)
+String setMotorKd(int motor_no, float Kd)
 {
-  kpB = kp;
-  pidMotorB.setKp(kpB);
-  pidMotorB.begin();
+  kd[motor_no-1] = Kd;
+  pidMotor[motor_no-1].setKd(kd[motor_no-1]);
+  pidMotor[motor_no-1].begin();
   return "1";
 }
-String sendMotorBkp()
+String getMotorKd(int motor_no)
 {
-  return String(kpB, 4);
+  return String(kd[motor_no-1], 4);
 }
 
 
-
-String setMotorAki(float ki)
-{
-  kiA = ki;
-  pidMotorA.setKi(kiA);
-  pidMotorA.begin();
-  return "1";
-}
-String sendMotorAki()
-{
-  return String(kiA, 4);
-}
-
-
-
-String setMotorBki(float ki)
-{
-  kiB = ki;
-  pidMotorB.setKi(kiB);
-  pidMotorB.begin();
-  return "1";
-}
-String sendMotorBki()
-{
-  return String(kiB, 4);
-}
-
-
-
-String setMotorAkd(float kd)
-{
-  kdA = kd;
-  pidMotorA.setKd(kdA);
-  pidMotorA.begin();
-  return "1";
-}
-String sendMotorAkd()
-{
-  return String(kdA, 4);
-}
-
-
-
-String setMotorBkd(float kd)
-{
-  kdB = kd;
-  pidMotorB.setKd(kdB);
-  pidMotorB.begin();
-  return "1";
-}
-String sendMotorBkd()
-{
-  return String(kdB, 4);
-}
-
-
-
-String setRdirA(float dir)
+String setRdir(int motor_no, float dir)
 {
   if (dir >= 0.0)
-  {
-    rdirA = 1.00;
-  }
+    rdir[motor_no-1] = 1.00;
   else
-  {
-    rdirA = -1.00;
-  }
+    rdir[motor_no-1] = -1.00;
+
   return "1";
 }
-String sendRdirA()
+String getRdir(int motor_no)
 {
-  return String(rdirA);
+  return String(rdir[motor_no-1]);
 }
 
 
-
-
-String setRdirB(float dir)
+String setCutoffFreq(int motor_no, float f0)
 {
-  if (dir >= 0.0)
-  {
-    rdirA = 1.00;
-  }
-  else
-  {
-    rdirA = -1.00;
-  }
+  cutOffFreq[motor_no-1] = f0;
+  velFilter[motor_no-1].setCutOffFreq(cutOffFreq[motor_no-1]);
   return "1";
 }
-String sendRdirB()
+String getCutoffFreq(int motor_no)
 {
-  return String(rdirB);
+  return String(cutOffFreq[motor_no-1]);
 }
 
 
-
-String setVelFilterCutoffFreqA(float f0)
-{
-  velFilterCutOffFreqA = f0;
-  velFilterA.setCutOffFreq(velFilterCutOffFreqA);
-  return "1";
-}
-String sendVelFilterCutoffFreqA()
-{
-  return String(velFilterCutOffFreqA);
-}
-
-
-
-String setVelFilterCutoffFreqB(float f0)
-{
-  velFilterCutOffFreqB = f0;
-  velFilterB.setCutOffFreq(velFilterCutOffFreqB);
-  return "1";
-}
-String sendVelFilterCutoffFreqB()
-{
-  return String(velFilterCutOffFreqB);
-}
-
+// String setCmdTimeout(int timeout)
+// {
+//   int cmdTimeout = timeout;
+//   if (cmdTimeout < 10)
+//   {
+//     cmdVelTimeoutInterval = 0;
+//   }
+//   else
+//   {
+//     cmdVelTimeoutInterval = cmdTimeout;
+//   }
+//   for (int i=0; i<2; i+=1)
+//   {
+//     cmdVelTimeout[i] = millis();
+//   }
+//   return "1";
+// }
+// String getCmdTimeout()
+// {
+//   return String(cmdVelTimeoutInterval);
+// }
 
 
 #endif
