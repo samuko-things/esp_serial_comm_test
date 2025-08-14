@@ -1,7 +1,7 @@
 #include <Arduino.h>
-#include "serial_comm.h"
 #include "command_functions.h"
-
+#include "serial_comm.h"
+#include "i2c_comm.h"
 
 void IRAM_ATTR readEncoder1()
 {
@@ -66,6 +66,10 @@ void setup()
 {
   Serial.begin(115200);
   Serial.setTimeout(2);
+
+  Wire.onReceive(onReceive);
+  Wire.onRequest(onRequest);
+  Wire.begin((uint8_t)i2cAddress);
 
   pinMode(LED_BUILTIN, OUTPUT);
   digitalWrite(LED_BUILTIN, LOW);
@@ -133,6 +137,7 @@ void loop()
         target[i] = 0.00;
         pidMode[i] = 0;
         motor[i].sendPWM(0);
+        pidMotor[i].begin();
         isMotorCommanded[i] = 0;
         pidStopTime[i] = millis();
       }
@@ -156,6 +161,7 @@ void loop()
         target[i] = 0.00;
         pidMode[i] = 0;
         motor[i].sendPWM(0);
+        pidMotor[i].begin();
         isMotorCommanded[i] = 0;
       }
     }

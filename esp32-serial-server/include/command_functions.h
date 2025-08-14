@@ -2,13 +2,11 @@
 #define COMMAND_FUNCTIONS_H
 
 #include <Arduino.h>
+#include <Wire.h>
 #include "l298n_motor_control.h"
 #include "encoder_setup.h"
 #include "adaptive_low_pass_filter.h"
 #include "simple_pid_control.h"
-
-
-
 
 //--------------- global variables -----------------//
 
@@ -137,6 +135,9 @@ float rdir[2] = {
 // for command timeout.
 unsigned long cmdVelTimeoutInterval = 0; // ms -> (1000/sampleTime) hz
 unsigned long cmdVelTimeout[2];
+
+// initial i2cAddress
+byte i2cAddress = 0x55;
 //-------------------------------------------------//
 
 
@@ -295,6 +296,23 @@ String setCmdTimeout(int timeout)
 String getCmdTimeout()
 {
   return String(cmdVelTimeoutInterval);
+}
+
+
+String setI2cAddress(int address)
+{
+  if((address <= 0) || (address > 255)){
+    return "0";
+  }
+  else {
+    i2cAddress = address;
+    Wire.begin((uint8_t)i2cAddress);
+    return "1";
+  }
+}
+String getI2cAddress()
+{
+  return String(i2cAddress);
 }
 
 

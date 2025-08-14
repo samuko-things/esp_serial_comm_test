@@ -201,13 +201,24 @@ void recieve_and_send_data(){
         Serial.println(sendMsg);
       }
 
-      else if (dataMsgBufferArray[0] == "/cmd-timeout")
+      else if (dataMsgBufferArray[0] == "/timeout")
       {
         if (dataMsgBufferArray[2] == ""){
           sendMsg = getCmdTimeout();
         }
         else {
           sendMsg = setCmdTimeout(dataMsgBufferArray[2].toInt());
+        }
+        Serial.println(sendMsg);
+      }
+
+      else if (dataMsgBufferArray[0] == "/i2c")
+      {
+        if (dataMsgBufferArray[2] == ""){
+          sendMsg = getI2cAddress();
+        }
+        else {
+          sendMsg = setI2cAddress(dataMsgBufferArray[2].toInt());
         }
         Serial.println(sendMsg);
       }
