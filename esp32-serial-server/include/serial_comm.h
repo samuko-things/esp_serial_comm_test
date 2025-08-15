@@ -209,6 +209,23 @@ void recieve_and_send_data(){
         Serial.println(sendMsg);
       }
 
+      else if (dataMsgBufferArray[0] == "/max-vel")
+      {
+        if (dataMsgBufferArray[2] == ""){
+          if (motor_no_not_found)
+            sendMsg = "0.0";
+          else
+            sendMsg = getMaxVel(motor_no);
+        }
+        else {
+          if (motor_no_not_found)
+            sendMsg = "0";
+          else
+            sendMsg = setMaxVel(motor_no, dataMsgBufferArray[2].toFloat());
+        }
+        Serial.println(sendMsg);
+      }
+
       else if (dataMsgBufferArray[0] == "/timeout")
       {
         if (dataMsgBufferArray[2] == ""){

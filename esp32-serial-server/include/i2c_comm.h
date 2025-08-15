@@ -117,7 +117,6 @@ void onReceive(int dataSizeInBytes) {
     digitalWrite(LED_BUILTIN, LOW);
   }
 
-  // i2cSendMsg = "";
   i2cDataMsg = "";
   i2cDataMsgBuffer = "";
   i2cDataMsgBufferArray[0] = "";

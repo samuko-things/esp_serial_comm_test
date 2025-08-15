@@ -29,7 +29,7 @@ void IRAM_ATTR readEncoder1()
 
 void encoderInit()
 {
-  for (int i=0; i<2; i+=1){
+  for (int i=0; i<num_of_motors; i+=1){
     encoder[i].setPulsePerRev(enc_ppr[i]);
   }
 
@@ -39,14 +39,14 @@ void encoderInit()
 
 void velFilterInit()
 {
-  for (int i=0; i<2; i+=1){
+  for (int i=0; i<num_of_motors; i+=1){
     velFilter[i].setCutOffFreq(cutOffFreq[i]);
   }
 }
 
 void pidInit()
 {
-  for (int i=0; i<2; i+=1){
+  for (int i=0; i<num_of_motors; i+=1){
     pidMotor[i].setParameters(kp[i], ki[i], kd[i], outMin, outMax);
     pidMotor[i].begin();
   }
@@ -69,7 +69,7 @@ void setup()
 
   Wire.onReceive(onReceive);
   Wire.onRequest(onRequest);
-  Wire.begin((uint8_t)i2cAddress);
+  Wire.begin(i2cAddress);
 
   pinMode(LED_BUILTIN, OUTPUT);
   digitalWrite(LED_BUILTIN, LOW);
@@ -84,7 +84,7 @@ void setup()
   sensorUpdateTime = now;
   serialLoopTime   = now;
   pidTime          = now;
-  for (int i=0; i<2; i+=1){
+  for (int i=0; i<num_of_motors; i+=1){
     pidStopTime[i] = now;
     cmdVelTimeout[i] = now;
     isMotorCommanded[i] = 0;
@@ -99,7 +99,7 @@ void loop()
   // Sensor update loop
   if ((now - sensorUpdateTime) >= sensorUpdateTimeInterval)
   {
-    for (int i=0; i<2; i+=1)
+    for (int i=0; i<num_of_motors; i+=1)
     {
       unfilteredVel[i] = encoder[i].getAngVel();
       filteredVel[i] = velFilter[i].filter(unfilteredVel[i]);
@@ -107,7 +107,7 @@ void loop()
     sensorUpdateTime = now;
   }
   
-  // Serial comm loop
+  // Serial comm loop  // i2cSendMsg = "";
   if ((now - serialLoopTime) >= serialLoopTimeInterval)
   {
     recieve_and_send_data();
@@ -117,7 +117,7 @@ void loop()
   // PID control loop
   if ((now - pidTime) >= pidTimeInterval)
   {
-    for (int i=0; i<2; i+=1)
+    for (int i=0; i<num_of_motors; i+=1)
     {
       if (pidMode[i])
       {
@@ -129,7 +129,7 @@ void loop()
   }
 
   // check to see if motor has stopped
-  for (int i=0; i<2; i+=1){
+  for (int i=0; i<num_of_motors; i+=1){
     if (fabs(target[i]) < 0.01 && pidMode[1] == 1)
     {
       if ((millis() - pidStopTime[i]) >= pidStopTimeInterval)
@@ -152,7 +152,7 @@ void loop()
   int cmdTimeout = (int)cmdVelTimeoutInterval;
   if (cmdVelTimeoutInterval > 0)
   {
-    for (int i=0; i<2; i+=1){
+    for (int i=0; i<num_of_motors; i+=1){
       if (!isMotorCommanded[i]) {
         cmdVelTimeout[i] = millis();
       }

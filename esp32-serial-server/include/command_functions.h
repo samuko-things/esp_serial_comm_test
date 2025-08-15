@@ -9,24 +9,28 @@
 #include "simple_pid_control.h"
 
 //--------------- global variables -----------------//
+const int num_of_motors = 2;
 
 // motor 0 H-Bridge Connection
 int IN1 = 26, IN2 = 27, enA = 25;
 // motor 1 H-Bridge Connection
 int IN3 = 14, IN4 = 12, enB = 13;
 
-L298NMotorControl motor[2] = {
+L298NMotorControl motor[num_of_motors] = {
   L298NMotorControl(IN1, IN2, enA), // motor 0
   L298NMotorControl(IN3, IN4, enB) // motor 1
 };
 
-
-// store encoder pulsePerRev needed by encoder
-// float enc0_ppr = 374.25;
-// float enc1_ppr = 374.25;
-float enc_ppr[2]={
+float enc_ppr[num_of_motors]={
   1000.0, // motor 0 encoder pulse per revolution parameter
   1000.0 // motor 1 encoder pulse per revolution parameter
+};
+
+const char * ppr_key[4] = {
+  "ppr0",
+  "ppr1",
+  "ppr2",
+  "ppr3"
 };
 
 // motor 0 encoder connection
@@ -34,29 +38,36 @@ int enc1_clkPin = 18, enc1_dirPin = 19;
 // motor 1 encoder connection
 int enc2_clkPin = 16, enc2_dirPin = 17;
 
-QuadEncoder encoder[2] = {
+QuadEncoder encoder[num_of_motors] = {
   QuadEncoder(enc1_clkPin, enc1_dirPin, enc_ppr[0]), // motor 0 encoder connection
   QuadEncoder(enc2_clkPin, enc2_dirPin, enc_ppr[1]) // motor 1 encoder connection
 };
 
 // adaptive lowpass Filter
 const int filterOrder = 1;
-float cutOffFreq[2] = {
+float cutOffFreq[num_of_motors] = {
   1.0, // motor 0 velocity filter cutoff frequency
   1.0 // motor 1 velocity filter cutoff frequency
 };
 
-AdaptiveLowPassFilter velFilter[2] = {
+const char * cf_key[4] = {
+  "cf0",
+  "cf1",
+  "cf2",
+  "cf3"
+};
+
+AdaptiveLowPassFilter velFilter[num_of_motors] = {
   AdaptiveLowPassFilter(filterOrder, cutOffFreq[0]), // motor 0 velocity filter
   AdaptiveLowPassFilter(filterOrder, cutOffFreq[1]) // motor 1 velocity filter
 };
 
-float filteredVel[2] = {
+float filteredVel[num_of_motors] = {
   0.0,
   0.0
 };
 
-float unfilteredVel[2] = {
+float unfilteredVel[num_of_motors] = {
   0.0,
   0.0
 };
@@ -64,65 +75,103 @@ float unfilteredVel[2] = {
 // motor PID parameters
 float outMin = -255.0, outMax = 255.0;
 
-float kp[2] = {
+float kp[num_of_motors] = {
   0.0,
   0.0
 };
 
-float ki[2] = {
+const char * kp_key[4] = {
+  "kp0",
+  "kp1",
+  "kp2",
+  "kp3"
+};
+
+float ki[num_of_motors] = {
   0.0,
   0.0
 };
 
-float kd[2] = {
+const char * ki_key[4] = {
+  "ki0",
+  "ki1",
+  "ki2",
+  "ki3"
+};
+
+float kd[num_of_motors] = {
   0.0,
   0.0
 };
 
-float target[2] = {
+const char * kd_key[4] = {
+  "kd0",
+  "kd1",
+  "kd2",
+  "kd3"
+};
+
+float target[num_of_motors] = {
   0.0,
   0.0
 };
 
-float output[2] = {
+float output[num_of_motors] = {
   0.0,
   0.0
 };
 
-SimplePID pidMotor[2] = {
+SimplePID pidMotor[num_of_motors] = {
   SimplePID(kp[0], ki[0], kd[0], outMin, outMax),
   SimplePID(kp[1], ki[1], kd[1], outMin, outMax),
 };
 
 
 // check if in PID or PWM mode
-int pidMode[2] = {
+int pidMode[num_of_motors] = {
   0,
   0
 }; // 1-PID MODE, 0-SETUP/PWM MODE
 
-int isMotorCommanded[2] = {
+int isMotorCommanded[num_of_motors] = {
   0,
   0
 };
 
-float rdir[2] = {
+float rdir[num_of_motors] = {
   1.0,
   1.0
 };
 
+const char * rdir_key[4] = {
+  "rdir0",
+  "rdir1",
+  "rdir2",
+  "rdir3"
+};
+
 // // maximum motor velocity that can be commanded
-float maxVel[2] = {
+float maxVel[num_of_motors] = {
   10.0,
   10.0
 };
 
+const char * maxVel_key[4] = {
+  "maxVel0",
+  "maxVel1",
+  "maxVel2",
+  "maxVel3"
+};
+
 // for command timeout.
 unsigned long cmdVelTimeoutInterval = 0; // ms -> (1000/sampleTime) hz
-unsigned long cmdVelTimeout[2];
+unsigned long cmdVelTimeout[num_of_motors];
 
 // initial i2cAddress
-byte i2cAddress = 0x55;
+uint8_t i2cAddress = 0x55;
+const char * i2cAddress_key = "i2cAddress";
+
+const char * params_ns = "params"; // preference namespace
 //-------------------------------------------------//
 
 
@@ -134,23 +183,23 @@ byte i2cAddress = 0x55;
 
 String readPos(int motor_no){
   float posData = encoder[motor_no].getAngPos();
-  String data = String(posData, 3);
+  String data = String(rdir[motor_no] * posData, 3);
   return data;
 }
 
 String readVel(int motor_no){
-  String data = String(filteredVel[motor_no], 4);
+  String data = String(rdir[motor_no] * filteredVel[motor_no], 4);
   data += ",";
-  data += String(unfilteredVel[motor_no], 4);
+  data += String(rdir[motor_no] * unfilteredVel[motor_no], 4);
   return data;
 }
 
 
 String readPidVel(int motor_no)
 {
-  String data = String(target[motor_no], 4);
+  String data = String(rdir[motor_no] * target[motor_no], 4);
   data += ",";
-  data += String(filteredVel[motor_no], 4);
+  data += String(rdir[motor_no] * filteredVel[motor_no], 4);
   return data;
 }
 
@@ -158,7 +207,9 @@ String readPidVel(int motor_no)
 String writePWM(int motor_no, int pwm)
 {
   pidMode[motor_no] = 0;
-  motor[motor_no].sendPWM(pwm);
+
+  int p = constrain(pwm, -255, 255);
+  motor[motor_no].sendPWM((int)rdir[motor_no] * p);
   cmdVelTimeout[motor_no] = millis();
   isMotorCommanded[motor_no] = 1;
   return "1";
@@ -168,7 +219,9 @@ String writePWM(int motor_no, int pwm)
 String writeSpeed(int motor_no, float targetVel)
 {
   pidMode[motor_no] = 1;
-  target[motor_no] = targetVel;
+
+  float tVel = constrain(targetVel, -1.00 * maxVel[motor_no], maxVel[motor_no]);
+  target[motor_no] = rdir[motor_no] * tVel;
   cmdVelTimeout[motor_no] = millis();
   isMotorCommanded[motor_no] = 1;
   return "1";
@@ -243,15 +296,26 @@ String getMotorKd(int motor_no)
 String setRdir(int motor_no, float dir)
 {
   if (dir >= 0.0)
-    rdir[motor_no] = 1.00;
+    rdir[motor_no] = 1.0;
   else
-    rdir[motor_no] = -1.00;
+    rdir[motor_no] = -1.0;
 
   return "1";
 }
 String getRdir(int motor_no)
 {
-  return String(rdir[motor_no]);
+  return String(rdir[motor_no], 1);
+}
+
+
+String setMaxVel(int motor_no, float max_vel)
+{
+  maxVel[motor_no] = fabs(max_vel);
+  return "1";
+}
+String getMaxVel(int motor_no)
+{
+  return String(maxVel[motor_no], 2);
 }
 
 
@@ -292,8 +356,8 @@ String setI2cAddress(int address)
     return "0";
   }
   else {
-    i2cAddress = address;
-    Wire.begin((uint8_t)i2cAddress);
+    i2cAddress = (uint8_t)address;
+    Wire.begin(i2cAddress);
     return "1";
   }
 }

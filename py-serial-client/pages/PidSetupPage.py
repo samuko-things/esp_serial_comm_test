@@ -45,7 +45,7 @@ class PidSetupFrame(tb.Frame):
                                middleware_func=self.setCfFunc)
     
 
-    # g.motorMaxVel[self.motorNo] = g.motorController.getParam("/max-vel", self.motorNo)
+    g.motorMaxVel[self.motorNo] = g.motorController.getParam("/max-vel", self.motorNo)
     self.setMaxVel = SetValueFrame(self.frame1, keyTextInit=f"*W_MAX(rad/s): ", valTextInit=g.motorMaxVel[self.motorNo],
                                    middleware_func=self.setMaxVelFunc)
     
@@ -135,11 +135,10 @@ class PidSetupFrame(tb.Frame):
   
   def setMaxVelFunc(self, vel_val_str):
     try:
-      pass
-      # if vel_val_str:
-      #   isSuccessful = g.motorController.setParam("/max-vel", self.motorNo, float(vel_val_str))
-      #   val = g.motorController.getParam("/max-vel", self.motorNo)
-      #   g.motorMaxVel[self.motorNo] = val
+      if vel_val_str:
+        isSuccessful = g.motorController.setParam("/max-vel", self.motorNo, float(vel_val_str))
+        val = g.motorController.getParam("/max-vel", self.motorNo)
+        g.motorMaxVel[self.motorNo] = val
     except:
       pass
 
