@@ -274,10 +274,18 @@ String writePWM(int motor_no, int pwm)
 {
   pidMode[motor_no] = 0;
 
-  int p = constrain(pwm, -255, 255);
+  int p;
+  if (pwm>255)
+    p = 255;
+  else if (pwm<-255)
+    p = -255;
+  else
+    p = pwm;
+  
   motor[motor_no].sendPWM((int)rdir[motor_no] * p);
   cmdVelTimeout[motor_no] = millis();
   isMotorCommanded[motor_no] = 1;
+  
   return "1";
 }
 
@@ -286,10 +294,22 @@ String writeSpeed(int motor_no, float targetVel)
 {
   pidMode[motor_no] = 1;
 
-  float tVel = constrain(targetVel, -1.00 * maxVel[motor_no], maxVel[motor_no]);
-  target[motor_no] = rdir[motor_no] * tVel;
+  float vel;
+  if (targetVel > maxVel[motor_no]){
+    vel = maxVel[motor_no];
+  }
+  else if (targetVel < (-1.00 * maxVel[motor_no])){
+    vel = -1.00 * maxVel[motor_no];
+  }
+  else {
+    vel = targetVel;
+  }
+    
+
+  target[motor_no] = rdir[motor_no] * vel;
   cmdVelTimeout[motor_no] = millis();
   isMotorCommanded[motor_no] = 1;
+
   return "1";
 }
 

@@ -1,51 +1,31 @@
 #include <Arduino.h>
 #include "command_functions.h"
+// #include "parameter_store.h"
 #include "serial_comm.h"
 #include "i2c_comm.h"
 
-#include "driver/gpio.h"
-#include "esp_timer.h"  // For esp_timer_get_time()
-
 void IRAM_ATTR readEncoder0()
 {
-  int64_t currentTime_us = esp_timer_get_time();
-
-  int clkState = gpio_get_level((gpio_num_t)encoder[0].clkPin);
-  int dirState = gpio_get_level((gpio_num_t)encoder[0].dirPin);
-  if (clkState == dirState)
+  if (digitalRead(encoder[0].clkPin) == digitalRead(encoder[0].dirPin))
   {
     encoder[0].tickCount -= 1;
-    encoder[0].dir = -1.00;
   }
   else
   {
     encoder[0].tickCount += 1;
-    encoder[0].dir = 1.00;
   }
-
-  encoder[0].periodPerTick_us = currentTime_us - encoder[0].oldTickTime_us;
-  encoder[0].oldTickTime_us = currentTime_us;
 }
 
 void IRAM_ATTR readEncoder1()
 {
-  int64_t currentTime_us = esp_timer_get_time();
-
-  int clkState = gpio_get_level((gpio_num_t)encoder[1].clkPin);
-  int dirState = gpio_get_level((gpio_num_t)encoder[1].dirPin);
-  if (clkState == dirState)
+  if (digitalRead(encoder[1].clkPin) == digitalRead(encoder[1].dirPin))
   {
     encoder[1].tickCount -= 1;
-    encoder[1].dir = -1.00;
   }
   else
   {
     encoder[1].tickCount += 1;
-    encoder[1].dir = 1.00;
   }
-
-  encoder[1].periodPerTick_us = currentTime_us - encoder[1].oldTickTime_us;
-  encoder[1].oldTickTime_us = currentTime_us;
 }
 
 void encoderInit()
@@ -79,8 +59,8 @@ void pidInit()
 // please do not adjust any of the values as it can affect important operations
 unsigned long sensorUpdateTime, sensorUpdateTimeInterval = 2;
 unsigned long serialLoopTime, serialLoopTimeInterval = 5;
-unsigned long pidTime, pidTimeInterval = 10;
-unsigned long pidStopTime[2], pidStopTimeInterval = 200;
+unsigned long pidTime, pidTimeInterval = 6;
+unsigned long pidStopTime[2], pidStopTimeInterval = 100;
 //---------------------------------------------------------------------------------------------
 
 void setup()
@@ -103,6 +83,7 @@ void setup()
 
   // Initialize timing markers
   unsigned long now = millis();
+  // unsigned long now_us = micros();
   sensorUpdateTime = now;
   serialLoopTime   = now;
   pidTime          = now;
@@ -116,24 +97,24 @@ void setup()
 void loop()
 {
   unsigned long now = millis();
-
-  // Serial comm loop  // i2cSendMsg = "";
-  if ((now - serialLoopTime) >= serialLoopTimeInterval)
-  {
-    recieve_and_send_data();
-    serialLoopTime = now;
-  }
+  // unsigned long now_us = micros();
 
   // Sensor update loop
   if ((now - sensorUpdateTime) >= sensorUpdateTimeInterval)
   {
     for (int i=0; i<num_of_motors; i+=1)
     {
-      encoder[i].resetPeriod();
       unfilteredVel[i] = encoder[i].getAngVel();
       filteredVel[i] = velFilter[i].filter(unfilteredVel[i]);
     }
     sensorUpdateTime = now;
+  }
+  
+  // Serial comm loop  // i2cSendMsg = "";
+  if ((now - serialLoopTime) >= serialLoopTimeInterval)
+  {
+    recieve_and_send_data();
+    serialLoopTime = now;
   }
 
   // PID control loop
