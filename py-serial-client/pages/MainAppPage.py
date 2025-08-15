@@ -3,7 +3,7 @@ import ttkbootstrap as tb
 from ttkbootstrap.constants import *
 
 # from pages.I2CSetupPage import I2CSetupFrame
-# from pages.ResetSetupPage import ResetSetupFrame
+from pages.ResetSetupPage import ResetSetupFrame
 from pages.EncSetupPage import EncSetupFrame
 from pages.PidSetupPage import PidSetupFrame
 
@@ -41,8 +41,8 @@ class MainAppFrame(tb.Frame):
     self.button4 = tb.Button(self.sideNavFrame, text="MOTOR 2 PID", style=buttonStyleName,
                              command= lambda: self.displayPage(self.button4, self.displaymotorBPidSetupPage))
     
-    # self.button6 = tb.Button(self.sideNavFrame, text="RESET PARAMS", style=buttonStyleName,
-    #                          command= lambda: self.displayPage(self.button6, self.displayResetPage))
+    self.button6 = tb.Button(self.sideNavFrame, text="RESET PARAMS", style=buttonStyleName,
+                             command= lambda: self.displayPage(self.button6, self.displayResetPage))
     
     
     # add widget to sideNavFrame
@@ -51,7 +51,7 @@ class MainAppFrame(tb.Frame):
     self.button2.pack(side="top", fill="x", padx=5, pady=(10,35))
     self.button3.pack(side="top", fill="x", padx=5, pady=10)
     self.button4.pack(side="top", fill="x", padx=5, pady=(10,35))
-    # self.button6.pack(side="top", fill="x", padx=5, pady=10)
+    self.button6.pack(side="top", fill="x", padx=5, pady=10)
 
 
     
@@ -84,9 +84,9 @@ class MainAppFrame(tb.Frame):
       frame.destroy()
 
 
-  # def displayResetPage(self):
-  #   self.resetFrame = ResetSetupFrame(self.mainContentFrame)
-  #   self.resetFrame.pack(side="left", expand=True, fill="both")
+  def displayResetPage(self):
+    self.resetFrame = ResetSetupFrame(self.mainContentFrame)
+    self.resetFrame.pack(side="left", expand=True, fill="both")
   
   
   def displayMotorAEncSetupPage(self):

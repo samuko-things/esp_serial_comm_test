@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include "command_functions.h"
+// #include "parameter_store.h"
 #include "serial_comm.h"
 #include "i2c_comm.h"
 
@@ -56,14 +57,16 @@ void pidInit()
 //---------------------------------------------------------------------------------------------
 // Timing variables
 // please do not adjust any of the values as it can affect important operations
-unsigned long sensorUpdateTime, sensorUpdateTimeInterval = 5;
+unsigned long sensorUpdateTime, sensorUpdateTimeInterval = 2;
 unsigned long serialLoopTime, serialLoopTimeInterval = 5;
-unsigned long pidTime, pidTimeInterval = 20;
-unsigned long pidStopTime[2], pidStopTimeInterval = 250;
+unsigned long pidTime, pidTimeInterval = 6;
+unsigned long pidStopTime[2], pidStopTimeInterval = 100;
 //---------------------------------------------------------------------------------------------
 
 void setup()
 {
+  loadStoredParams();
+
   Serial.begin(115200);
   Serial.setTimeout(2);
 
@@ -129,24 +132,24 @@ void loop()
   }
 
   // check to see if motor has stopped
-  for (int i=0; i<num_of_motors; i+=1){
-    if (fabs(target[i]) < 0.01 && pidMode[1] == 1)
-    {
-      if ((millis() - pidStopTime[i]) >= pidStopTimeInterval)
-      {
-        target[i] = 0.00;
-        pidMode[i] = 0;
-        motor[i].sendPWM(0);
-        pidMotor[i].begin();
-        isMotorCommanded[i] = 0;
-        pidStopTime[i] = millis();
-      }
-    }
-    else
-    {
-      pidStopTime[i] = millis();
-    }
-  }
+  // for (int i=0; i<num_of_motors; i+=1){
+  //   if (fabs(target[i]) < 0.01 && pidMode[1] == 1)
+  //   {
+  //     if ((millis() - pidStopTime[i]) >= pidStopTimeInterval)
+  //     {
+  //       target[i] = 0.00;
+  //       pidMode[i] = 0;
+  //       motor[i].sendPWM(0);
+  //       pidMotor[i].begin();
+  //       isMotorCommanded[i] = 0;
+  //       pidStopTime[i] = millis();
+  //     }
+  //   }
+  //   else
+  //   {
+  //     pidStopTime[i] = millis();
+  //   }
+  // }
   
   // command timeout
   int cmdTimeout = (int)cmdVelTimeoutInterval;

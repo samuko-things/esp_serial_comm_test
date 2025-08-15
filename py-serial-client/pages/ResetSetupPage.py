@@ -5,7 +5,7 @@ from ttkbootstrap.dialogs import Messagebox
 
 from termcolor import colored
 
-from epmc.globalParams import g
+from globalParams import g
 
 
 class ResetSetupFrame(tk.Frame):
@@ -49,5 +49,5 @@ class ResetSetupFrame(tk.Frame):
 
 
   def resetAllParams(self):
-    isSuccessful = g.motorController.setParam("/reset", -1)
+    isSuccessful = g.motorController.setParam("/reset", -1, -1)
     return isSuccessful

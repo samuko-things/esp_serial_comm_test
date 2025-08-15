@@ -3,10 +3,12 @@
 
 #include <Arduino.h>
 #include <Wire.h>
+#include <Preferences.h>
 #include "l298n_motor_control.h"
 #include "encoder_setup.h"
 #include "adaptive_low_pass_filter.h"
 #include "simple_pid_control.h"
+// #include "parameter_store.h"
 
 //--------------- global variables -----------------//
 const int num_of_motors = 2;
@@ -26,13 +28,6 @@ float enc_ppr[num_of_motors]={
   1000.0 // motor 1 encoder pulse per revolution parameter
 };
 
-const char * ppr_key[4] = {
-  "ppr0",
-  "ppr1",
-  "ppr2",
-  "ppr3"
-};
-
 // motor 0 encoder connection
 int enc1_clkPin = 18, enc1_dirPin = 19;
 // motor 1 encoder connection
@@ -48,13 +43,6 @@ const int filterOrder = 1;
 float cutOffFreq[num_of_motors] = {
   1.0, // motor 0 velocity filter cutoff frequency
   1.0 // motor 1 velocity filter cutoff frequency
-};
-
-const char * cf_key[4] = {
-  "cf0",
-  "cf1",
-  "cf2",
-  "cf3"
 };
 
 AdaptiveLowPassFilter velFilter[num_of_motors] = {
@@ -80,35 +68,14 @@ float kp[num_of_motors] = {
   0.0
 };
 
-const char * kp_key[4] = {
-  "kp0",
-  "kp1",
-  "kp2",
-  "kp3"
-};
-
 float ki[num_of_motors] = {
   0.0,
   0.0
 };
 
-const char * ki_key[4] = {
-  "ki0",
-  "ki1",
-  "ki2",
-  "ki3"
-};
-
 float kd[num_of_motors] = {
   0.0,
   0.0
-};
-
-const char * kd_key[4] = {
-  "kd0",
-  "kd1",
-  "kd2",
-  "kd3"
 };
 
 float target[num_of_motors] = {
@@ -143,17 +110,68 @@ float rdir[num_of_motors] = {
   1.0
 };
 
+// // maximum motor velocity that can be commanded
+float maxVel[num_of_motors] = {
+  10.0,
+  10.0
+};
+
+// for command timeout.
+unsigned long cmdVelTimeoutInterval = 0; // ms -> (1000/sampleTime) hz
+unsigned long cmdVelTimeout[num_of_motors];
+
+// initial i2cAddress
+uint8_t i2cAddress = 0x55;
+
+// for stored initialization and reset
+bool firstLoad = false;
+//-------------------------------------------------//
+
+
+
+//--------------- storage variables -----------------//
+Preferences storage;
+
+const char * ppr_key[4] = {
+  "ppr0",
+  "ppr1",
+  "ppr2",
+  "ppr3"
+};
+
+const char * cf_key[4] = {
+  "cf0",
+  "cf1",
+  "cf2",
+  "cf3"
+};
+
+const char * kp_key[4] = {
+  "kp0",
+  "kp1",
+  "kp2",
+  "kp3"
+};
+
+const char * ki_key[4] = {
+  "ki0",
+  "ki1",
+  "ki2",
+  "ki3"
+};
+
+const char * kd_key[4] = {
+  "kd0",
+  "kd1",
+  "kd2",
+  "kd3"
+};
+
 const char * rdir_key[4] = {
   "rdir0",
   "rdir1",
   "rdir2",
   "rdir3"
-};
-
-// // maximum motor velocity that can be commanded
-float maxVel[num_of_motors] = {
-  10.0,
-  10.0
 };
 
 const char * maxVel_key[4] = {
@@ -163,18 +181,66 @@ const char * maxVel_key[4] = {
   "maxVel3"
 };
 
-// for command timeout.
-unsigned long cmdVelTimeoutInterval = 0; // ms -> (1000/sampleTime) hz
-unsigned long cmdVelTimeout[num_of_motors];
-
-// initial i2cAddress
-uint8_t i2cAddress = 0x55;
 const char * i2cAddress_key = "i2cAddress";
 
+const char * firstLoad_key = "firstLoad";
+
 const char * params_ns = "params"; // preference namespace
+
+void resetParamsInStorage(){
+  storage.begin(params_ns, false);
+
+  for (int i=0; i<num_of_motors; i+=1){
+    storage.putFloat(ppr_key[i], 1000.0);
+    storage.putFloat(kp_key[i], 0.0);
+    storage.putFloat(ki_key[i], 0.0);
+    storage.putFloat(kd_key[i], 0.0);
+    storage.putFloat(cf_key[i], 1.0);
+    storage.putFloat(rdir_key[i], 1.0);
+    storage.putFloat(maxVel_key[i], 10.0);
+  }
+  storage.putUChar(i2cAddress_key, 0x55);
+
+  storage.end();
+}
+
+void initParams(){
+  //check for firstLoad
+  storage.begin(params_ns, true);
+  firstLoad = storage.getBool(firstLoad_key);
+  storage.end();
+  // if firsLoad -> reset all params and set firstLoad to false
+  if(firstLoad == true){
+    resetParamsInStorage();
+    firstLoad = false;
+    storage.begin(params_ns, false);
+    storage.putBool(firstLoad_key, firstLoad);
+    storage.end();
+  }
+
+}
+
+void loadStoredParams(){
+  initParams();
+  // load each parameter form the storage to the local variables
+  storage.begin(params_ns, true);
+
+  for (int i=0; i<num_of_motors; i+=1){
+    enc_ppr[i] = storage.getFloat(ppr_key[i], 1000.0);
+    kp[i] = storage.getFloat(kp_key[i], 0.0);
+    ki[i] = storage.getFloat(ki_key[i], 0.0);
+    kd[i] = storage.getFloat(kd_key[i], 0.0);
+    cutOffFreq[i] = storage.getFloat(cf_key[i], 1.0);
+    rdir[i] = storage.getFloat(rdir_key[i], 1.0);
+    maxVel[i] = storage.getFloat(maxVel_key[i], 10.0);
+  }
+  i2cAddress = storage.getUChar(i2cAddress_key, 0x55);
+
+  storage.end();
+}
+
+
 //-------------------------------------------------//
-
-
 
 
 
@@ -245,6 +311,9 @@ String writeSpeed(int motor_no, float targetVel)
 String setEncoderPPR(int motor_no, float ppr)
 {
   enc_ppr[motor_no] = ppr;
+  storage.begin(params_ns, false);
+  storage.putFloat(ppr_key[motor_no], enc_ppr[motor_no]);
+  storage.end();
   encoder[motor_no].setPulsePerRev(enc_ppr[motor_no]);
   return "1";
 }
@@ -257,6 +326,9 @@ String getEncoderPPR(int motor_no)
 String setMotorKp(int motor_no, float Kp)
 {
   kp[motor_no] = Kp;
+  storage.begin(params_ns, false);
+  storage.putFloat(kp_key[motor_no], kp[motor_no]);
+  storage.end();
   pidMotor[motor_no].setKp(kp[motor_no]);
   pidMotor[motor_no].begin();
   return "1";
@@ -270,6 +342,9 @@ String getMotorKp(int motor_no)
 String setMotorKi(int motor_no, float Ki)
 {
   ki[motor_no] = Ki;
+  storage.begin(params_ns, false);
+  storage.putFloat(ki_key[motor_no], ki[motor_no]);
+  storage.end();
   pidMotor[motor_no].setKi(ki[motor_no]);
   pidMotor[motor_no].begin();
   return "1";
@@ -283,6 +358,9 @@ String getMotorKi(int motor_no)
 String setMotorKd(int motor_no, float Kd)
 {
   kd[motor_no] = Kd;
+  storage.begin(params_ns, false);
+  storage.putFloat(kd_key[motor_no], kd[motor_no]);
+  storage.end();
   pidMotor[motor_no].setKd(kd[motor_no]);
   pidMotor[motor_no].begin();
   return "1";
@@ -299,7 +377,9 @@ String setRdir(int motor_no, float dir)
     rdir[motor_no] = 1.0;
   else
     rdir[motor_no] = -1.0;
-
+  storage.begin(params_ns, false);
+  storage.putFloat(rdir_key[motor_no], rdir[motor_no]);
+  storage.end();
   return "1";
 }
 String getRdir(int motor_no)
@@ -311,6 +391,9 @@ String getRdir(int motor_no)
 String setMaxVel(int motor_no, float max_vel)
 {
   maxVel[motor_no] = fabs(max_vel);
+  storage.begin(params_ns, false);
+  storage.putFloat(maxVel_key[motor_no], maxVel[motor_no]);
+  storage.end();
   return "1";
 }
 String getMaxVel(int motor_no)
@@ -322,6 +405,9 @@ String getMaxVel(int motor_no)
 String setCutoffFreq(int motor_no, float f0)
 {
   cutOffFreq[motor_no] = f0;
+  storage.begin(params_ns, false);
+  storage.putFloat(cf_key[motor_no], cutOffFreq[motor_no]);
+  storage.end();
   velFilter[motor_no].setCutOffFreq(cutOffFreq[motor_no]);
   return "1";
 }
@@ -357,6 +443,9 @@ String setI2cAddress(int address)
   }
   else {
     i2cAddress = (uint8_t)address;
+    storage.begin(params_ns, false);
+    storage.putUChar(i2cAddress_key, i2cAddress);
+    storage.end();
     Wire.begin(i2cAddress);
     return "1";
   }
@@ -364,6 +453,17 @@ String setI2cAddress(int address)
 String getI2cAddress()
 {
   return String(i2cAddress);
+}
+
+String triggerResetParams()
+{
+  storage.begin(params_ns, false);
+  firstLoad = true;
+  storage.putBool(firstLoad_key, firstLoad);
+  storage.end();
+  // reload to reset
+  loadStoredParams();
+  return "1";
 }
 
 
