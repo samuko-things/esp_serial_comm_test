@@ -49,21 +49,27 @@ void onReceive(int dataSizeInBytes) {
     } while (indexPos >= 0);
   }
 
-  // Serial.println(i2cDataMsgBufferArray[0]);
-
   if (i2cDataMsgBufferArray[0] != "")
   {
     int motor_no = i2cDataMsgBufferArray[1].toInt();
-    bool motor_no_not_found = (motor_no <= 0) || (motor_no > 2);
+    bool motor_no_not_found = (motor_no < 0) || (motor_no > 1);
 
     digitalWrite(LED_BUILTIN, HIGH);
 
-    if (i2cDataMsgBufferArray[0] == "/data")
+    if (i2cDataMsgBufferArray[0] == "/pos")
     {
       if (motor_no_not_found)
-        i2cSendMsg = "0.0,0.0,0.0";
+        i2cSendMsg = "0.000";
       else
-        i2cSendMsg = readMotorData(motor_no);
+        i2cSendMsg = readPos(motor_no);
+    }
+
+    else if (i2cDataMsgBufferArray[0] == "/pvel")
+    {
+      if (motor_no_not_found)
+        i2cSendMsg = "0.0,0.0";
+      else
+        i2cSendMsg = readPidVel(motor_no);
     }
 
     else if (i2cDataMsgBufferArray[0] == "/pwm")
@@ -71,15 +77,23 @@ void onReceive(int dataSizeInBytes) {
       if (motor_no_not_found)
         i2cSendMsg = "0";
       else
-        i2cSendMsg = writeMotorPWM(motor_no, i2cDataMsgBufferArray[2].toInt());
+        i2cSendMsg = writePWM(motor_no, i2cDataMsgBufferArray[2].toInt());
     }
 
     else if (i2cDataMsgBufferArray[0] == "/vel")
     {
-      if (motor_no_not_found)
-        i2cSendMsg = "0";
-      else
-        i2cSendMsg = writeMotorSpeed(motor_no, i2cDataMsgBufferArray[2].toFloat());
+      if (i2cDataMsgBufferArray[2] == ""){
+        if (motor_no_not_found)
+          i2cSendMsg = "0.0,0.0";
+        else
+          i2cSendMsg = readVel(motor_no);
+      }
+      else {
+        if (motor_no_not_found)
+          i2cSendMsg = "0";
+        else
+          i2cSendMsg = writeSpeed(motor_no, i2cDataMsgBufferArray[2].toFloat());
+      }
     }
 
     else if (i2cDataMsgBufferArray[0] == "/timeout")

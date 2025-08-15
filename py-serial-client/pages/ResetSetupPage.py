@@ -49,5 +49,5 @@ class ResetSetupFrame(tk.Frame):
 
 
   def resetAllParams(self):
-    isSuccessful = g.motorController.setParam("/reset", 0, 0)
+    isSuccessful = g.motorController.setParam("/reset", -1)
     return isSuccessful

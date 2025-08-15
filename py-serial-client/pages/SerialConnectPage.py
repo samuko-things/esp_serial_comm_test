@@ -72,8 +72,8 @@ class SerialConnectFrame(tb.Frame):
     try:
       g.motorController = SerialComm(name)
       time.sleep(1)
+      # g.motorController.setParam('/mode', 0, 0)
       # g.motorController.setParam('/mode', 1, 0)
-      # g.motorController.setParam('/mode', 2, 0)
       return True
     except:
       return False

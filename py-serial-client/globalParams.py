@@ -12,9 +12,6 @@ class g():
 
   i2cAddress = None
 
-  #### motorA is index 0 and motorB is index 1 ##########
-  motorLabel = ['A', 'B']
-
   motorTestPwm = [0, 0] 
   motorTestDuration = [durationList[1], durationList[1]]
   

@@ -18,13 +18,21 @@ class Esp32SerialServer:
                 print("[Timeout] No response from ESP32")
         return data
     
-    def readData(self, motor_no):
+    def readPos(self, motor_no):
         '''
-        returns rotational angularPosition (in rad), filtered angularVelocity (in rad/sec), unfiltered angularVelocity (in rad/sec)
+        returns rotational angularPosition (in rad)
         '''
-        cmd_str = "/data" + "," + str(motor_no)
+        cmd_str = "/pos" + "," + str(motor_no)
         data = self.send_and_receive(cmd_str).split(',')
-        return float(data[0]), float(data[1]), float(data[2])
+        return float(data[0])
+    
+    def readVel(self, motor_no):
+        '''
+        returns filtered angularVelocity (in rad/sec), unfiltered angularVelocity (in rad/sec)
+        '''
+        cmd_str = "/vel" + "," + str(motor_no)
+        data = self.send_and_receive(cmd_str).split(',')
+        return float(data[0]), float(data[1])
     
     def readPidVel(self, motor_no):
         '''

@@ -39,8 +39,9 @@ void setup() {
   Wire.begin();
 
   delay(1000);
-  masterSendData("/pwm,1,80");
-  masterSendData("/pwm,2,100");
+  masterSendData("/timeout,-1,5000");
+  masterSendData("/pwm,0,60");
+  masterSendData("/pwm,1,100");
   // String reply = masterReceiveData();
   // Serial.println(reply);
 }
@@ -49,11 +50,11 @@ void loop() {
   String reply;
   delay(20);
 
-  masterSendData("/data,1");
+  masterSendData("/vel,0");
   reply = masterReceiveData();
   Serial.println(reply);
 
-  masterSendData("/data,2");
+  masterSendData("/vel,1");
   reply = masterReceiveData();
   Serial.println(reply);
 

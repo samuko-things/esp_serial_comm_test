@@ -39,21 +39,21 @@ class CmdMotorFrame(tb.LabelFrame):
   def startForwardCommand(self, e):
     # print("start forward command")
     if int(g.motorDirConfig[self.motorNo]) == 1:
-      g.motorController.writePWM(self.motorNo+1, g.motorTestPwm[self.motorNo])
+      g.motorController.writePWM(self.motorNo, g.motorTestPwm[self.motorNo])
     elif int(g.motorDirConfig[self.motorNo]) == -1:
-      g.motorController.writePWM(self.motorNo+1, -g.motorTestPwm[self.motorNo])
+      g.motorController.writePWM(self.motorNo, -g.motorTestPwm[self.motorNo])
 
   def stopForwardCommand(self, e):
     # print("stop forward command")
-    g.motorController.writePWM(self.motorNo+1, 0)
+    g.motorController.writePWM(self.motorNo, 0)
 
   def startReverseCommand(self, e):
     # print("start reverse command")
     if int(g.motorDirConfig[self.motorNo]) == 1:
-      g.motorController.writePWM(self.motorNo+1, -g.motorTestPwm[self.motorNo])
+      g.motorController.writePWM(self.motorNo, -g.motorTestPwm[self.motorNo])
     elif int(g.motorDirConfig[self.motorNo]) == -1:
-      g.motorController.writePWM(self.motorNo+1, g.motorTestPwm[self.motorNo])
+      g.motorController.writePWM(self.motorNo, g.motorTestPwm[self.motorNo])
 
   def stopReverseCommand(self, e):
     # print("stop reverse command")
-    g.motorController.writePWM(self.motorNo+1, 0)
+    g.motorController.writePWM(self.motorNo, 0)

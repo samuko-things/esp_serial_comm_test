@@ -42,16 +42,16 @@ void recieve_and_send_data(){
     if (dataMsgBufferArray[0] != "")
     {
       int motor_no = dataMsgBufferArray[1].toInt();
-      bool motor_no_not_found = (motor_no <= 0) || (motor_no > 2);
+      bool motor_no_not_found = (motor_no < 0) || (motor_no > 1);
 
       digitalWrite(LED_BUILTIN, HIGH);
 
-      if (dataMsgBufferArray[0] == "/data")
+      if (dataMsgBufferArray[0] == "/pos")
       {
         if (motor_no_not_found)
-          sendMsg = "0.0,0.0,0.0";
+          sendMsg = "0.000";
         else
-          sendMsg = readMotorData(motor_no);
+          sendMsg = readPos(motor_no);
         Serial.println(sendMsg);
       }
 
@@ -60,7 +60,7 @@ void recieve_and_send_data(){
         if (motor_no_not_found)
           sendMsg = "0.0,0.0";
         else
-          sendMsg = readMotorPidVel(motor_no);
+          sendMsg = readPidVel(motor_no);
         Serial.println(sendMsg);
       }
 
@@ -69,16 +69,24 @@ void recieve_and_send_data(){
         if (motor_no_not_found)
           sendMsg = "0";
         else
-          sendMsg = writeMotorPWM(motor_no, dataMsgBufferArray[2].toInt());
+          sendMsg = writePWM(motor_no, dataMsgBufferArray[2].toInt());
         Serial.println(sendMsg);
       }
 
       else if (dataMsgBufferArray[0] == "/vel")
       {
-        if (motor_no_not_found)
-          sendMsg = "0";
-        else
-          sendMsg = writeMotorSpeed(motor_no, dataMsgBufferArray[2].toFloat());
+        if (dataMsgBufferArray[2] == ""){
+          if (motor_no_not_found)
+            sendMsg = "0.0,0.0";
+          else
+            sendMsg = readVel(motor_no);
+        }
+        else {
+          if (motor_no_not_found)
+            sendMsg = "0";
+          else
+            sendMsg = writeSpeed(motor_no, dataMsgBufferArray[2].toFloat());
+        }
         Serial.println(sendMsg);
       }
 

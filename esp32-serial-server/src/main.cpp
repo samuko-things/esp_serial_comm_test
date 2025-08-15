@@ -3,7 +3,7 @@
 #include "serial_comm.h"
 #include "i2c_comm.h"
 
-void IRAM_ATTR readEncoder1()
+void IRAM_ATTR readEncoder0()
 {
   if (digitalRead(encoder[0].clkPin) == digitalRead(encoder[0].dirPin))
   {
@@ -15,7 +15,7 @@ void IRAM_ATTR readEncoder1()
   }
 }
 
-void IRAM_ATTR readEncoder2()
+void IRAM_ATTR readEncoder1()
 {
   if (digitalRead(encoder[1].clkPin) == digitalRead(encoder[1].dirPin))
   {
@@ -33,8 +33,8 @@ void encoderInit()
     encoder[i].setPulsePerRev(enc_ppr[i]);
   }
 
-  attachInterrupt(digitalPinToInterrupt(encoder[0].clkPin), readEncoder1, RISING);
-  attachInterrupt(digitalPinToInterrupt(encoder[1].clkPin), readEncoder2, RISING);
+  attachInterrupt(digitalPinToInterrupt(encoder[0].clkPin), readEncoder0, RISING);
+  attachInterrupt(digitalPinToInterrupt(encoder[1].clkPin), readEncoder1, RISING);
 }
 
 void velFilterInit()
