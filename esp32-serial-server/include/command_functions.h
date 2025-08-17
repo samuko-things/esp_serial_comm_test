@@ -283,7 +283,7 @@ String writePWM(int motor_no, int pwm)
     p = pwm;
   
   motor[motor_no].sendPWM((int)rdir[motor_no] * p);
-  cmdVelTimeout[motor_no] = millis();
+  // cmdVelTimeout[motor_no] = millis();
   isMotorCommanded[motor_no] = 1;
   
   return "1";
@@ -305,9 +305,8 @@ String writeSpeed(int motor_no, float targetVel)
     vel = targetVel;
   }
     
-
   target[motor_no] = rdir[motor_no] * vel;
-  cmdVelTimeout[motor_no] = millis();
+  // cmdVelTimeout[motor_no] = millis();
   isMotorCommanded[motor_no] = 1;
 
   return "1";

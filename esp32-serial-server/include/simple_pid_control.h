@@ -5,22 +5,22 @@
 
 class SimplePID {
   public:
-    SimplePID(double Kp, double Ki, double Kd, double out_min, double out_max);
+    SimplePID(float Kp, float Ki, float Kd, float out_min, float out_max);
 
-    void setParameters(double Kp, double Ki, double Kd, double out_min, double out_max);
-    void setGains(double Kp, double Ki, double Kd);
-    void setKp(double Kp);
-    void setKi(double Ki);
-    void setKd(double Kd);
-    void setOutLimit(double out_max, double out_min);
+    void setParameters(float Kp, float Ki, float Kd, float out_min, float out_max);
+    void setGains(float Kp, float Ki, float Kd);
+    void setKp(float Kp);
+    void setKi(float Ki);
+    void setKd(float Kd);
+    void setOutLimit(float out_max, float out_min);
     void begin();
-    double compute(double target, double actual);
+    float compute(float target, float actual);
 
   private:
-    double error, errorPrev, errorInt, errorDot;
+    float error, errorPrev, errorInt, errorDot;
     unsigned long lastTime = 0;
-    double kp, ki, kd;
-    double outMax, outMin, outSat, outUnsat;
+    float kp, ki, kd;
+    float outMax, outMin, outSat, outUnsat;
     bool outputIsClamped = false;
     bool integratorIsOn = true;
 
@@ -28,9 +28,7 @@ class SimplePID {
 };
 
 
-
-
-SimplePID::SimplePID(double Kp, double Ki, double Kd, double out_min, double out_max)
+SimplePID::SimplePID(float Kp, float Ki, float Kd, float out_min, float out_max)
 {
   reset();
 
@@ -44,7 +42,7 @@ SimplePID::SimplePID(double Kp, double Ki, double Kd, double out_min, double out
   lastTime = micros();
 }
 
-void SimplePID::setParameters(double Kp, double Ki, double Kd, double out_min, double out_max)
+void SimplePID::setParameters(float Kp, float Ki, float Kd, float out_min, float out_max)
 {
   kp = Kp;
   ki = Ki;
@@ -53,29 +51,29 @@ void SimplePID::setParameters(double Kp, double Ki, double Kd, double out_min, d
   outMin = out_min;
 }
 
-void SimplePID::setGains(double Kp, double Ki, double Kd)
+void SimplePID::setGains(float Kp, float Ki, float Kd)
 {
   kp = Kp;
   ki = Ki;
   kd = Kd;
 }
 
-void SimplePID::setKp(double Kp)
+void SimplePID::setKp(float Kp)
 {
   kp = Kp;
 }
 
-void SimplePID::setKi(double Ki)
+void SimplePID::setKi(float Ki)
 {
   ki = Ki;
 }
 
-void SimplePID::setKd(double Kd)
+void SimplePID::setKd(float Kd)
 {
   kd = Kd;
 }
 
-void SimplePID::setOutLimit(double out_max, double out_min)
+void SimplePID::setOutLimit(float out_max, float out_min)
 {
   outMax = out_max;
   outMin = out_min;
@@ -87,44 +85,58 @@ void SimplePID::begin()
   lastTime = micros();
 }
 
-double SimplePID::compute(double target, double actual)
+float SimplePID::compute(float target, float actual)
 {
-  double now = micros();
-  double dt = (now - lastTime) / 1.0e6;
-  if (dt <= 0.0) dt = 1e-6; // prevent div by zero
+  float sampleFreq = 1.0e6 / (float)(micros() - lastTime);
 
   error = target - actual;
 
-  // Integral term
+  errorDot = (error - errorPrev) * sampleFreq;
+
   if (integratorIsOn)
-      errorInt += error * dt;
-
-  // Derivative term with simple low-pass filter
-  errorDot = (error - errorPrev) / dt;
-  // double derivative = (error - errorPrev) / dt;
-  // double alpha = 0.25; // tune between 0-1
-  // errorDot = alpha * derivative + (1 - alpha) * errorDot;
-
-  // PID output
-  outUnsat = (kp * error) + (ki * errorInt) + (kd * errorDot);
-
-  // Output saturation
-  if (outUnsat > outMax) {
-      outSat = outMax;
-      outputIsClamped = true;
-  } else if (outUnsat < outMin) {
-      outSat = outMin;
-      outputIsClamped = true;
-  } else {
-      outSat = outUnsat;
-      outputIsClamped = false;
+  {
+    errorInt += (error / sampleFreq);
+  }
+  else
+  {
+    errorInt += 0.0;
   }
 
-  // Anti-windup
-  integratorIsOn = !outputIsClamped;
+  outUnsat = (kp * error) + (ki * errorInt) + (kd * errorDot);
+
+  if (outUnsat > outMax)
+  {
+    outSat = outMax;
+    outputIsClamped = true;
+  }
+  else if (outUnsat < outMin)
+  {
+    outSat = outMin;
+    outputIsClamped = true;
+  }
+  else
+  {
+    outSat = outUnsat;
+    outputIsClamped = false;
+  }
+
+  //      if(!outputIsClamped && !((error*outUnsat)<0)){
+  //        integratorIsOn = true;
+  //      }
+  if (!outputIsClamped)
+  {
+    integratorIsOn = true;
+  }
+  else
+  {
+    integratorIsOn = false;
+  }
+
+  //      Serial.println(integratorIsOn);
+  //      Serial.println();
 
   errorPrev = error;
-  lastTime = now;
+  lastTime = micros();
 
   return outSat;
 }

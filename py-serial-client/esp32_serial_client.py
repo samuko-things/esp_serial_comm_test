@@ -53,10 +53,11 @@ class Esp32SerialServer:
     def writeSpeed(self, motor_no, speed):
         cmd_str = "/vel" + "," + str(motor_no) + "," + str(speed)
         data = self.send_and_receive(cmd_str).split(',')
-        if data[0] == "1":
-            return True
-        else:
-            return False
+        return data[0]
+        # if data[0] == "1":
+        #     return True
+        # else:
+        #     return False
     
     def setParam(self, cmd_route, motor_no, param_val):
         cmd_str = cmd_route + "," + str(motor_no) + "," + str(param_val)

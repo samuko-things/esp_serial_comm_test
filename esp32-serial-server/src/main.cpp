@@ -3,48 +3,39 @@
 #include "serial_comm.h"
 #include "i2c_comm.h"
 
-#include "driver/gpio.h"
-#include "esp_timer.h"  // For esp_timer_get_time()
-
 void IRAM_ATTR readEncoder0()
 {
-  int64_t currentTime_us = esp_timer_get_time();
+  unsigned long currentTime_us = micros();
 
-  int clkState = gpio_get_level((gpio_num_t)encoder[0].clkPin);
-  int dirState = gpio_get_level((gpio_num_t)encoder[0].dirPin);
-  if (clkState == dirState)
-  {
-    encoder[0].tickCount -= 1;
-    encoder[0].dir = -1.00;
-  }
-  else
-  {
-    encoder[0].tickCount += 1;
-    encoder[0].dir = 1.00;
-  }
+  int clkState = digitalRead(encoder[0].clkPin);
+  int dirState = digitalRead(encoder[0].dirPin);
 
-  encoder[0].periodPerTick_us = currentTime_us - encoder[0].oldTickTime_us;
+  int8_t dir = (clkState == dirState) ? -1 : 1;
+  encoder[0].dir = dir;
+  encoder[0].tickCount += dir;
+
+  unsigned long period = currentTime_us - encoder[0].oldTickTime_us;
+  if (period > 50 && period < 20000000) { // Ignore if > 20 sec or negative
+      encoder[0].periodPerTick_us = period;
+  }
   encoder[0].oldTickTime_us = currentTime_us;
 }
 
 void IRAM_ATTR readEncoder1()
 {
-  int64_t currentTime_us = esp_timer_get_time();
+  unsigned long currentTime_us = micros();
 
-  int clkState = gpio_get_level((gpio_num_t)encoder[1].clkPin);
-  int dirState = gpio_get_level((gpio_num_t)encoder[1].dirPin);
-  if (clkState == dirState)
-  {
-    encoder[1].tickCount -= 1;
-    encoder[1].dir = -1.00;
-  }
-  else
-  {
-    encoder[1].tickCount += 1;
-    encoder[1].dir = 1.00;
-  }
+  int clkState = digitalRead(encoder[1].clkPin);
+  int dirState = digitalRead(encoder[1].dirPin);
 
-  encoder[1].periodPerTick_us = currentTime_us - encoder[1].oldTickTime_us;
+  int8_t dir = (clkState == dirState) ? -1 : 1;
+  encoder[1].dir = dir;
+  encoder[1].tickCount += dir;
+
+  unsigned long period = currentTime_us - encoder[1].oldTickTime_us;
+  if (period > 50 && period < 20000000) { // Ignore if > 20 sec or negative
+      encoder[1].periodPerTick_us = period;
+  }
   encoder[1].oldTickTime_us = currentTime_us;
 }
 
@@ -77,11 +68,19 @@ void pidInit()
 //---------------------------------------------------------------------------------------------
 // Timing variables
 // please do not adjust any of the values as it can affect important operations
-unsigned long sensorUpdateTime, sensorUpdateTimeInterval = 2;
-unsigned long serialLoopTime, serialLoopTimeInterval = 5;
+unsigned long sensorUpdateTime, sensorUpdateTimeInterval = 5;
+unsigned long serialLoopTime, serialLoopTimeInterval = 100;
 unsigned long pidTime, pidTimeInterval = 10;
-unsigned long pidStopTime[2], pidStopTimeInterval = 200;
+unsigned long pidStopTime[2], pidStopTimeInterval = 250;
 //---------------------------------------------------------------------------------------------
+
+float lowTargetVel = 0.00;  // rad/sec
+float highTargetVel = 3.142; // rad/sec
+bool sendHigh = true;
+
+long ctrlPrevTime;
+long ctrlSampleTime = 5000; // millisec
+
 
 void setup()
 {
@@ -101,6 +100,9 @@ void setup()
   velFilterInit();
   pidInit(); 
 
+  delay(1000);
+  sendHigh = true;
+
   // Initialize timing markers
   unsigned long now = millis();
   sensorUpdateTime = now;
@@ -111,16 +113,49 @@ void setup()
     cmdVelTimeout[i] = now;
     isMotorCommanded[i] = 0;
   }
+  ctrlPrevTime = now;
 }
 
 void loop()
 {
   unsigned long now = millis();
 
-  // Serial comm loop  // i2cSendMsg = "";
+  //---------------------------------------------
+  if ((now - ctrlPrevTime) >= ctrlSampleTime)
+  {
+    if (sendHigh)
+    {
+      for (int i=0; i<num_of_motors; i+=1)
+      {
+        pidMode[i] = 1;
+        target[i] = highTargetVel;
+        isMotorCommanded[i] = 1;
+      }
+      sendHigh = false;
+    }
+    else
+    {
+      for (int i=0; i<num_of_motors; i+=1)
+      {
+        pidMode[i] = 1;
+        target[i] = lowTargetVel;
+        isMotorCommanded[i] = 1;
+      }
+      sendHigh = true;
+    }
+    ctrlPrevTime = now;
+  }
+  //---------------------------------------------
+
+  // Serial comm loop
   if ((now - serialLoopTime) >= serialLoopTimeInterval)
   {
-    recieve_and_send_data();
+    // recieve_and_send_data();
+    Serial.println((int)output[0]);
+    Serial.println((int)output[1]);
+    Serial.println(filteredVel[0]);
+    Serial.println(filteredVel[1]);
+    Serial.println();
     serialLoopTime = now;
   }
 
@@ -131,6 +166,7 @@ void loop()
     {
       encoder[i].resetPeriod();
       unfilteredVel[i] = encoder[i].getAngVel();
+      // filteredVel[i] = encoder[i].getFilteredAngVel();
       filteredVel[i] = velFilter[i].filter(unfilteredVel[i]);
     }
     sensorUpdateTime = now;
@@ -157,6 +193,7 @@ void loop()
       if ((millis() - pidStopTime[i]) >= pidStopTimeInterval)
       {
         target[i] = 0.00;
+        output[i] = 0.00;
         pidMode[i] = 0;
         motor[i].sendPWM(0);
         pidMotor[i].begin();
@@ -181,6 +218,7 @@ void loop()
       if (isMotorCommanded[i] && ((millis() - cmdVelTimeout[i]) >= cmdVelTimeoutInterval))
       {
         target[i] = 0.00;
+        output[i] = 0.00;
         pidMode[i] = 0;
         motor[i].sendPWM(0);
         pidMotor[i].begin();
