@@ -10,8 +10,9 @@ unsigned long serialLoopTime, serialLoopTimeInterval=5;
 
 void setup()
 {
-  Serial.begin(115200);
-  Serial.setTimeout(2);
+  // Serial.begin(115200);
+  // Serial.begin(460800);
+  Serial.begin(921600);
 
   pinMode(LED_BUILTIN, OUTPUT);
   digitalWrite(LED_BUILTIN, LOW);
@@ -19,6 +20,7 @@ void setup()
 
   serialLoopTime = millis();
   sensorUpdateTime = millis();
+
 }
 
 void loop()
@@ -27,17 +29,18 @@ void loop()
   if ((millis() - sensorUpdateTime) >= sensorUpdateTimeInterval)
   {
     // Serial.println("Reading Sensors");
-    sensorA = -1 * (float)random(10000, 10000000) / 100.0;
-    sensorB = -1 * (float)random(10000, 10000000) / 100.0;
-    sensorC = -1 * (float)random(10000, 10000000) / 100.0;
+    sensor[0] = -1 * (float)random(100, 1000) / 10000.0;
+    sensor[1] = -1 * (float)random(100, 1000) / 10000.0;
+    sensor[2] = -1 * (float)random(100, 1000) / 10000.0;
 
     sensorUpdateTime = millis();
   }
   
-  if ((millis() - serialLoopTime) >= serialLoopTimeInterval)
-  {
-    recieve_and_send_data();
-    serialLoopTime = millis();
-  }
+  // if ((millis() - serialLoopTime) >= serialLoopTimeInterval)
+  // {
+  //   recieve_and_send_data();
+  //   serialLoopTime = millis();
+  // }
+  recieve_and_send_data();
   
 }

@@ -1,37 +1,86 @@
 import serial
+import struct
 import time
 
-class Esp32SerialServer:
-    def __init__(self, port, baud=115200, timeOut=0.1):
-        self.ser = serial.Serial(port, baud, timeout=timeOut)
-    
-    def send_and_receive(self, msg_cmd):
-        data = ""
-        prev_time = time.time()
-        while data=="":
-            try:
-                self.ser.write(msg_cmd.encode())   # send a single or multiple byte    
-                data = self.ser.readline().decode().strip()
-                if time.time()-prev_time > 2.0:
-                    raise Exception("[Timeout] No response from ESP32")
-            except:
-                print("[Timeout] No response from ESP32")
-        return data
-    
+ser = serial.Serial('/dev/ttyUSB0', 921600, timeout=0.1)
+
+START_BYTE = 0xAA
+READ_SENSOR = 0x01
+CMD_LED = 0x02
+
+def send_packet(cmd, payload_bytes):
+    length = len(payload_bytes)
+    packet = bytearray([START_BYTE, cmd, length]) + payload_bytes
+    checksum = sum(packet) & 0xFF
+    # print(checksum)
+    packet.append(checksum)
+    ser.write(packet)
 
 
-if __name__ == "__main__":
-    client = Esp32SerialServer('/dev/ttyUSB0')
+def read_packet():
+    payload = ser.read(4)
+    value = struct.unpack('<f', payload)[0]  # little-endian float
+    return value
 
-    comm_freq = 50.0 # Hz
-    comm_period = 1.0 / comm_freq
 
-    while True:
-        start_time = time.time()
+def write(cmd, pos, value):
+    payload = struct.pack('<Bf', pos, value)  # big-endian
+    send_packet(cmd, payload)
+    val = read_packet()
+    return val
 
-        msg = client.send_and_receive("/sensor")
-        print(msg)
+def read(cmd, pos):
+    payload = struct.pack('<Bf', pos, 0.0)  # big-endian
+    send_packet(cmd, payload)
+    val = read_packet()
+    return val
 
-        elapsed = time.time() - start_time
-        sleep_time = max(0, comm_period - elapsed)
-        time.sleep(sleep_time)
+# Example usage
+state=0
+
+while True:
+    start_time = time.time()
+    if state == 1:
+        state = 0
+    else:
+        state = 1
+    res = write(CMD_LED, 0, state)
+    # print(f'commanded LED STATE: {res}')
+
+    sensor0 = read(READ_SENSOR, 0)
+    # print(f'sensor0: {sensor0}')
+    sensor1 = read(READ_SENSOR, 1)
+    # print(f'sensor1: {sensor1}')
+    sensor2 = read(READ_SENSOR, 2)
+    # print(f'sensor2: {sensor2}')
+
+    # sensor0 = read(READ_SENSOR, 0)
+    # # print(f'sensor0: {sensor0}')
+    # sensor1 = read(READ_SENSOR, 1)
+    # # print(f'sensor1: {sensor1}')
+    # sensor2 = read(READ_SENSOR, 2)
+    # # print(f'sensor2: {sensor2}')
+
+    # sensor0 = read(READ_SENSOR, 0)
+    # # print(f'sensor0: {sensor0}')
+    # sensor1 = read(READ_SENSOR, 1)
+    # # print(f'sensor1: {sensor1}')
+    # sensor2 = read(READ_SENSOR, 2)
+    # # print(f'sensor2: {sensor2}')
+
+    # sensor0 = read(READ_SENSOR, 0)
+    # # print(f'sensor0: {sensor0}')
+    # sensor1 = read(READ_SENSOR, 1)
+    # # print(f'sensor1: {sensor1}')
+    # sensor2 = read(READ_SENSOR, 2)
+    # # print(f'sensor2: {sensor2}')
+
+    # sensor0 = read(READ_SENSOR, 0)
+    # # print(f'sensor0: {sensor0}')
+    # sensor1 = read(READ_SENSOR, 1)
+    # # print(f'sensor1: {sensor1}')
+    # sensor2 = read(READ_SENSOR, 2)
+    # # print(f'sensor2: {sensor2}')
+    # print()
+    end_time = time.time()
+    print(end_time-start_time)

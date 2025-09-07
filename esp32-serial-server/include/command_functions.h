@@ -5,24 +5,18 @@
 
 //--------------- global variables -----------------//
 int ledState = 0;
-float sensorA, sensorB, sensorC;
+float sensor[3];
 //-------------------------------------------------//
 
 
 //--------------- global functions ----------------//
-String commandLed(int state){
-  ledState = state;
-  // digitalWrite(LED_BUILTIN, ledState);
-  return String(ledState);
+int commandLed(int state){
+  digitalWrite(LED_BUILTIN, state);
+  return 1.0;
 }
 
-String readSensorData(String cmd_route){
-  String data = String(sensorA, 4);
-  data += ",";
-  data += String(sensorB, 4);
-  data += ",";
-  data += String(sensorC, 4);
-  return data;
+float readSensorData(int pos){
+  return sensor[pos];
 }
 //-------------------------------------------------//
 
