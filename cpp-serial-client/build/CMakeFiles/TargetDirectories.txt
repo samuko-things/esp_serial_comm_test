@@ -1,0 +1,3 @@
+/home/samuko-things/Documents/my_test/esp_serial_comm_test/cpp-serial-client/build/CMakeFiles/test_cpp.dir
+/home/samuko-things/Documents/my_test/esp_serial_comm_test/cpp-serial-client/build/CMakeFiles/edit_cache.dir
+/home/samuko-things/Documents/my_test/esp_serial_comm_test/cpp-serial-client/build/CMakeFiles/rebuild_cache.dir

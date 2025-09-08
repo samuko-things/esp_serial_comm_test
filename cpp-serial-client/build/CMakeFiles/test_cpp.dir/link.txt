@@ -1,0 +1,1 @@
+/usr/bin/c++ CMakeFiles/test_cpp.dir/examples/test.cpp.o -o test_cpp  -lserial 
