@@ -5,7 +5,7 @@
 
 //--------------- global variables -----------------//
 int ledState = 0;
-float sensor[3];
+float a, b, c, d;
 //-------------------------------------------------//
 
 
@@ -15,9 +15,9 @@ int commandLed(int state){
   return 1.0;
 }
 
-float readSensorData(int pos){
-  return sensor[pos];
-}
+// float readSensorData(int pos){
+//   return sensor[pos];
+// }
 //-------------------------------------------------//
 
 #endif

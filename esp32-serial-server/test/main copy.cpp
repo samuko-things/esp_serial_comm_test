@@ -11,8 +11,8 @@ unsigned long serialLoopTime, serialLoopTimeInterval=5;
 void setup()
 {
   // Serial.begin(115200);
-  // Serial.begin(460800);
-  Serial.begin(921600);
+  Serial.begin(460800);
+  // Serial.begin(921600);
 
   pinMode(LED_BUILTIN, OUTPUT);
   digitalWrite(LED_BUILTIN, LOW);
